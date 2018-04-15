@@ -141,6 +141,9 @@ def word_count(string):
 	return len(string.split())
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
+
+	scriptCategory="Text Information"
+
 	def __init__(self, *args, **kwargs):
 		super(GlobalPlugin, self).__init__(*args, **kwargs)
 
@@ -154,6 +157,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		else:
 			self.get_info(text)
+	script_getClipInfo.__doc__="speaks information of text on the clipboard"
 
 	def script_getInfo(self, gesture):
 		text=""
@@ -170,6 +174,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			return
 		else:
 			self.get_info(info.text.strip())
+	script_getInfo.__doc__="speaks information for currently selected text"
 
 	def get_info(self, text):
 		final=""
