@@ -62,11 +62,7 @@ def is_card(number):
 	return
 
 def is_isbn(text):
-	try:
-		i=isbn.validate(text)
-	except isbn.IsbnError:
-		i=False
-	return i
+	return isbn.isValid(str(text))
 
 def get(addr):
 	try:

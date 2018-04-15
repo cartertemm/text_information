@@ -1,531 +1,209 @@
-#
-# coding=utf-8
-"""pyisbn - A module for working with 10- and 13-digit ISBNs."""
-# Copyright © 2007-2017  James Rowe <jnrowe@gmail.com>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-
-
-__version__ = '1.0'
-__date__ = '2017-04-04'
-__author__ = 'James Rowe <jnrowe@gmail.com>'
-__copyright__ = 'Copyright © 2007-2017  James Rowe'
-__license__ = 'GNU General Public License Version 3'
-__credits__ = ''
-__history__ = 'See git repository'
-
-try:
-    from email.utils import parseaddr
-except ImportError:  # pragma: no cover [Python 2.4]
-    from email.Utils import parseaddr
-
-__doc__ += """.
-
-This module supports the calculation of ISBN checksums with
-``calculate_checksum()``, the conversion between ISBN-10 and ISBN-13 with
-``convert()`` and the validation of ISBNs with ``validate()``.
-
-All the ISBNs must be passed in as ``str`` types, even if it would seem
-reasonable to accept some ``int`` forms.  The reason behind this is English
-speaking countries use ``0`` for their group identifier, and Python would treat
-ISBNs beginning with ``0`` as octal representations producing incorrect
-results.  While it may be feasible to allow some cases as non-``str`` types the
-complexity in design and usage isn't worth the minimal benefit.
-
-The functions in this module also support 9-digit SBNs for people with older
-books in their collection.
-
-:version: %s
-:author: `%s <mailto:%s>`__
-:copyright: %s
-:status: Stable
-:license: %s
-""" % ((__version__, ) + parseaddr(__author__) + (__copyright__, __license__))
-
-import unicodedata
-
-from sys import version_info
-
-PY2 = version_info[0] == 2
-
-if PY2:  # pragma: Python 2
-    string_types = (str, unicode)
-else:  # pragma: Python 3
-    string_types = (str, )
-    unicode = str
-
-#: Dash types to accept, and scrub, in ISBN inputs
-DASHES = [unicodedata.lookup(s) for s in ('HYPHEN-MINUS', 'EN DASH', 'EM DASH',
-                                          'HORIZONTAL BAR')]+[" "]
-
-#: Site to URL mappings, broken out for easier extending at runtime
-URL_MAP = {
-    'amazon': (
-        ('https://www.amazon.%(tld)s/s'
-         '?search-alias=stripbooks&field-isbn=%(isbn)s'),
-        {
-            'de': None,
-            'fr': None,
-            'jp': None,
-            'uk': 'co.uk',
-            'us': 'com',
-        }),
-    'copac': 'http://copac.jisc.ac.uk/search?isn=%(isbn)s',
-    'google': 'https://books.google.com/books?vid=isbn:%(isbn)s',
-    'isbndb': 'https://isbndb.com/search/all?query=%(isbn)s',
-    'waterstones': 'https://www.waterstones.com/books/search/term/%(isbn)s',
-    'whsmith': 'https://www.whsmith.co.uk/search/go?w=%(isbn)s&af=cat1:books',
-    'worldcat': 'http://worldcat.org/isbn/%(isbn)s',
-}
-
-
-class CountryError(ValueError):
-
-    """Unknown country value."""
-
-
-class IsbnError(ValueError):
-
-    """Invalid ISBN string."""
-
-
-class SiteError(ValueError):
-
-    """Unknown site value."""
-
-
-class Isbn(object):
-
-    """Class for representing ISBN objects."""
-
-    __slots__ = ('__weakref__', '_isbn', 'isbn')
-
-    def __init__(self, isbn):
-        """Initialise a new ``Isbn`` object.
-
-        Args:
-            isbn (str): ISBN string
-
-        """
-        super(Isbn, self).__init__()
-        self._isbn = isbn
-        if len(isbn) in (9, 12):
-            self.isbn = _isbn_cleanse(isbn, False)
-        else:
-            self.isbn = _isbn_cleanse(isbn)
-
-    def __repr__(self):
-        """Self-documenting string representation.
-
-
-        Returns:
-            ``str``: String to recreate ``Isbn`` object
-
-        """
-        return '%s(%r)' % (self.__class__.__name__, self.isbn)
-
-    def __str__(self):
-        """Pretty printed ISBN string.
-
-        Returns:
-            ``str``: Human readable string representation of ``Isbn`` object
-
-        """
-        return "ISBN %s" % self._isbn
-
-    def __format__(self, format_spec=None):
-        """Extended pretty printing for ISBN strings.
-
-        Args:
-            format_spec (str): Extended format to use
-
-        Returns:
-            ``str``: Human readable string representation of ``Isbn`` object
-
-        Raises:
-            ValueError: Unknown value for ``format_spec``
-
-        """
-        if not format_spec:  # default format calls set format_spec to ''
-            return str(self)
-        elif format_spec == 'url':
-            return self.to_url()
-        elif format_spec.startswith('url:'):
-            parts = format_spec.split(':')[1:]
-            site = parts[0]
-            if len(parts) > 1:
-                country = parts[1]
-            else:
-                country = 'us'
-            return self.to_url(site, country)
-        elif format_spec == 'urn':
-            return self.to_urn()
-        else:
-            raise ValueError('Unknown format_spec %r' % format_spec)
-
-    def calculate_checksum(self):
-        """Calculate ISBN checksum.
-
-        Returns:
-            ``str``: ISBN checksum value
-
-        """
-        if len(self.isbn) in (9, 12):
-            return calculate_checksum(self.isbn)
-        else:
-            return calculate_checksum(self.isbn[:-1])
-
-    def convert(self, code='978'):
-        """Convert ISBNs between ISBN-10 and ISBN-13.
-
-        Args:
-            code (str): ISBN-13 prefix code
-
-        Returns:
-            ``str``: Converted ISBN
-
-        """
-        return convert(self.isbn, code)
-
-    def validate(self):
-        """Validate an ISBN value.
-
-        Returns:
-            ``bool``: ``True`` if ISBN is valid
-
-        """
-        return validate(self.isbn)
-
-    def to_url(self, site='amazon', country='us'):
-        """Generate a link to an online book site.
-
-        Args:
-            site (str): Site to create link to
-            country (str): Country specific version of ``site``
-
-        Returns:
-            ``str``: URL on ``site`` for book
-
-        Raises:
-            SiteError: Unknown site value
-            CountryError: Unknown country value
-
-        """
-        try:
-            try:
-                url, tlds = URL_MAP[site]
-            except ValueError:
-                tlds = None
-                url = URL_MAP[site]
-        except KeyError:
-            raise SiteError(site)
-        inject = {'isbn': self.isbn}
-        if tlds:
-            if country not in tlds:
-                raise CountryError(country)
-            tld = tlds[country]
-            if not tld:
-                tld = country
-            inject['tld'] = tld
-        return url % inject
-
-    def to_urn(self):
-        """Generate a RFC 3187 URN.
-
-        :rfc:`3187` is the commonly accepted way to use ISBNs as uniform
-        resource names.
-
-        Returns:
-            ``str``: :rfc:`3187` compliant URN
-
-        """
-        return 'URN:ISBN:%s' % self._isbn
-
-
-class Isbn10(Isbn):
-
-    """Class for representing ISBN-10 objects.
-
-    See also:
-        ``Isbn``
-
-    """
-
-    def __init__(self, isbn):
-        """Initialise a new ``Isbn10`` object.
-
-        Args:
-            isbn (str): ISBN-10 string
-
-        """
-        super(Isbn10, self).__init__(isbn)
-
-    def calculate_checksum(self):
-        """Calculate ISBN-10 checksum.
-
-        Returns:
-            ``str``: ISBN-10 checksum value
-
-        """
-        return calculate_checksum(self.isbn[:9])
-
-    def convert(self, code='978'):
-        """Convert ISBN-10 to ISBN-13.
-
-        Args:
-            code (str): ISBN-13 prefix code
-
-        Returns:
-            ``str``: ISBN-13 string
-
-        """
-        return convert(self.isbn, code)
-
-
-class Sbn(Isbn10):
-
-    """Class for representing SBN objects.
-
-    See also:
-        ``Isbn10``
-
-    """
-
-    def __init__(self, sbn):
-        """Initialise a new ``Sbn`` object.
-
-        Args:
-            sbn (str): SBN string
-
-        """
-        isbn = '0' + sbn
-        super(Sbn, self).__init__(isbn)
-
-    def __repr__(self):
-        """Self-documenting string representation.
-
-        Returns:
-            ``str``: String to recreate ``Sbn`` object
-
-        """
-        return '%s(%r)' % (self.__class__.__name__, self.isbn[1:])
-
-    def calculate_checksum(self):
-        """Calculate SBN checksum.
-
-        Returns:
-            ``str``: SBN checksum value
-
-        """
-        return calculate_checksum(self.isbn[:9])
-
-    def convert(self, code='978'):
-        """Convert SBN to ISBN-13.
-
-        Args:
-            code (str): ISBN-13 prefix code
-
-        Returns:
-            ``str``: ISBN-13 string
-
-        """
-        return super(Sbn, self).convert(code)
-
-
-class Isbn13(Isbn):
-
-    """Class for representing ISBN-13 objects.
-
-    See also:
-        ``Isbn``
-
-    """
-
-    def __init__(self, isbn):
-        """Initialise a new ``Isbn13`` object.
-
-        Args:
-            isbn (str): ISBN-13 string
-
-        """
-        super(Isbn13, self).__init__(isbn)
-
-    def calculate_checksum(self):
-        """Calculate ISBN-13 checksum.
-
-        Returns:
-            ``str``: ISBN-13 checksum value
-
-        """
-        return calculate_checksum(self.isbn[:12])
-
-    def convert(self, code=None):
-        """Convert ISBN-13 to ISBN-10.
-
-        Args:
-            code: Ignored, only for compatibility with ``Isbn``
-
-        Returns:
-            ``str``: ISBN-10 string
-
-        Raises:
-            ValueError: When ISBN-13 isn't a Bookland "978" ISBN
-
-        """
-        return convert(self.isbn)
-
-
-def _isbn_cleanse(isbn, checksum=True):
-    """Check ISBN is a string, and passes basic sanity checks.
-
-    Args:
-        isbn (str): SBN, ISBN-10 or ISBN-13
-        checksum (bool): ``True`` if ``isbn`` includes checksum character
-
-    Returns:
-        ``str``: ISBN with hyphenation removed, including when called with a
-            SBN
-
-    Raises:
-        TypeError: ``isbn`` is not a ``str`` type
-        IsbnError: Incorrect length for ``isbn``
-        IsbnError: Incorrect SBN or ISBN formatting
-
-    """
-    if not isinstance(isbn, string_types):
-        raise TypeError('ISBN must be a string, received %r' % isbn)
-
-    if PY2 and isinstance(isbn, str):
-        isbn = unicode(isbn)
-        uni_input = False
+#!/usr/bin/env python
+# isbn.py
+# Code for messing with ISBN numbers
+# Especially stuff for converting between ISBN-10 and ISBN-13
+# Copyright (C) 2007 Darren J Wilkinson
+# Free GPL code
+# Last updated: 14/8/2007
+
+import sys,re
+
+__doc__="""Code for messing with ISBN numbers. Stuff for validating ISBN-10 and
+ISBN-13 numbers, computing check digits and converting from one format
+to the other.
+
+This code doesn't know anything about proper hyphenation of ISBNs. Nor does
+it know anything about the real "validity" of ISBNs - it just validates on
+the basis of the check-digit.
+
+Some examples:
+
+>>> import isbn
+>>> isbn.isValid("1-58488-540-8")
+True
+>>> isbn.isValid("1-58488-540-5")
+False
+>>> isbn.isValid("978-158488-540-5")
+True
+>>> isbn.isI10("978-158488-540-5")
+False
+>>> isbn.isI13("978-158488-540-5")
+True
+>>> isbn.convert("1-58488-540-8")
+'9781584885405'
+>>> isbn.convert("978-158488-540-5")
+'1584885408'
+>>> isbn.isbn_strip("978-158488-540-5")
+'9781584885405'
+>>> isbn.check("1-58488-540")
+'8'
+>>> isbn.toI13("1-58488-540-8")
+'9781584885405'
+>>> isbn.toI13("978-158488-540-5")
+'9781584885405'
+>>> isbn.url("amazon","978-158488-540-5")
+'http://www.amazon.com/exec/obidos/ASIN/1584885408'
+
+
+The code is very simple pure python code in a single source file. Please
+read the source code file (isbn.py) for further information about how
+it works.
+
+Please send bug reports, bug fixes, etc. to:
+darrenjwilkinson@btinternet.com
+Free GPL code, Copyright (C) 2007 Darren J Wilkinson
+http://www.staff.ncl.ac.uk/d.j.wilkinson/
+"""
+
+def isbn_strip(isbn):
+    """Strip whitespace, hyphens, etc. from an ISBN number and return
+the result."""
+    short=re.sub("\W","",isbn)
+    return re.sub("\D","X",short)
+
+def convert(isbn):
+    """Convert an ISBN-10 to ISBN-13 or vice-versa."""
+    short=isbn_strip(isbn)
+    if (isValid(short)==False):
+        raise "Invalid ISBN"
+    if len(short)==10:
+        stem="978"+short[:-1]
+        return stem+check(stem)
     else:
-        uni_input = True
-
-    for dash in DASHES:
-        isbn = isbn.replace(dash, unicode())
-
-    if checksum:
-        if not isbn[:-1].isdigit():
-            raise IsbnError('non-digit parts')
-        if len(isbn) == 9:
-            isbn = "0" + isbn
-        if len(isbn) == 10:
-            if not (isbn[-1].isdigit() or isbn[-1] in "Xx"):
-                raise IsbnError('non-digit or X checksum')
-        elif len(isbn) == 13:
-            if not isbn[-1].isdigit():
-                raise IsbnError('non-digit checksum')
+        if short[:3]=="978":
+            stem=short[3:-1]
+            return stem+check(stem)
         else:
-            raise IsbnError('ISBN must be either 10 or 13 characters long')
+            raise "ISBN not convertible"
+
+def isValid(isbn):
+    """Check the validity of an ISBN. Works for either ISBN-10 or ISBN-13."""
+    short=isbn_strip(isbn)
+    if len(short)==10:
+        return isI10(short)
+    elif len(short)==13:
+        return isI13(short)
     else:
-        if len(isbn) == 8:
-            isbn = '0' + isbn
-        if not isbn.isdigit():
-            raise IsbnError('non-digit parts')
-        if not len(isbn) in (9, 12):
-            raise IsbnError('ISBN must be either 9 or 12 characters long '
-                            'without checksum')
-    if PY2 and not uni_input:
-        # Sadly, type ping-pong is required to maintain backwards compatibility
-        # with previous pyisbn releases for Python 2 users.
-        return str(isbn)
+        return False
+
+def check(stem):
+    """Compute the check digit for the stem of an ISBN. Works with either
+    the first 9 digits of an ISBN-10 or the first 12 digits of an ISBN-13."""
+    short=isbn_strip(stem)
+    if len(short)==9:
+        return checkI10(short)
+    elif len(short)==12:
+        return checkI13(short)
     else:
-        return isbn
+        return False
 
-
-def calculate_checksum(isbn):
-    """Calculate ISBN checksum.
-
-    Args:
-        isbn (str): SBN, ISBN-10 or ISBN-13
-
-    Returns:
-        ``str``: Checksum for given ISBN or SBN
-
-    """
-    isbn = [int(i) for i in _isbn_cleanse(isbn, checksum=False)]
-    if len(isbn) == 9:
-        products = [x * y for x, y in zip(isbn, range(1, 10))]
-        check = sum(products) % 11
-        if check == 10:
-            check = 'X'
+def checkI10(stem):
+    """Computes the ISBN-10 check digit based on the first 9 digits of a
+stripped ISBN-10 number."""
+    chars=list(stem)
+    sum=0
+    digit=10
+    for char in chars:
+        sum+=digit*int(char)
+        digit-=1
+    check=11-(sum%11)
+    if check==10:
+        return "X"
+    elif check==11:
+        return "0"
     else:
-        # As soon as Python 2.4 support is dumped
-        # [(isbn[i] if i % 2 == 0 else isbn[i] * 3) for i in range(12)]
-        products = []
-        for i in range(12):
-            if i % 2 == 0:
-                products.append(isbn[i])
-            else:
-                products.append(isbn[i] * 3)
-        check = 10 - sum(products) % 10
-        if check == 10:
-            check = 0
-    return str(check)
+        return str(check)
 
-
-def convert(isbn, code='978'):
-    """Convert ISBNs between ISBN-10 and ISBN-13.
-
-    Note:
-        No attempt to hyphenate converted ISBNs is made, because the
-        specification requires that *any* hyphenation must be correct but
-        allows ISBNs without hyphenation.
-
-    Args:
-        isbn (str): SBN, ISBN-10 or ISBN-13
-        code (str): EAN Bookland code
-
-    Returns:
-        ``str``: Converted ISBN-10 or ISBN-13
-
-    Raise:
-        IsbnError: When ISBN-13 isn't convertible to an ISBN-10
-
-    """
-    isbn = _isbn_cleanse(isbn)
-    if len(isbn) == 10:
-        isbn = code + isbn[:-1]
-        return isbn + calculate_checksum(isbn)
+def isI10(isbn):
+    """Checks the validity of an ISBN-10 number."""
+    short=isbn_strip(isbn)
+    if (len(short)!=10):
+        return False
+    chars=list(short)
+    sum=0
+    digit=10
+    for char in chars:
+        if (char=='X' or char=='x'):
+            char="10"
+        sum+=digit*int(char)
+        digit-=1
+    remainder=sum%11
+    if remainder==0:
+        return True
     else:
-        if isbn.startswith('978'):
-            return isbn[3:-1] + calculate_checksum(isbn[3:-1])
+        return False
+
+def checkI13(stem):
+    """Compute the ISBN-13 check digit based on the first 12 digits of a
+    stripped ISBN-13 number. """
+    chars=list(stem)
+    sum=0
+    count=0
+    for char in chars:
+        if (count%2==0):
+            sum+=int(char)
         else:
-            raise IsbnError('Only ISBN-13s with 978 Bookland code can be '
-                            'converted to ISBN-10.')
+            sum+=3*int(char)
+        count+=1
+    check=10-(sum%10)
+    if check==10:
+        return "0"
+    else:
+        return str(check)
 
+def isI13(isbn):
+    """Checks the validity of an ISBN-13 number."""
+    short=isbn_strip(isbn)
+    if (len(short)!=13):
+        return False
+    chars=list(short)
+    sum=0
+    count=0
+    for char in chars:
+        if (count%2==0):
+            sum+=int(char)
+        else:
+            sum+=3*int(char)
+        count+=1
+    remainder=sum%10
+    if remainder==0:
+        return True
+    else:
+        return False
 
-def validate(isbn):
-    """Validate ISBNs.
+def toI10(isbn):
+    """Converts supplied ISBN (either ISBN-10 or ISBN-13) to a stripped
+ISBN-10."""
+    if (isValid(isbn)==False):
+        raise "Invalid ISBN"
+    if isI10(isbn):
+        return isbn_strip(isbn)
+    else:
+        return convert(isbn)
 
-    Warning:
-        Publishers have been known to go to press with broken ISBNs, and
-        therefore validation failures do not completely guarantee an ISBN is
-        incorrectly entered.  It should however be noted that it is massively
-        more likely *you* have entered an invalid ISBN than the published ISBN
-        is incorrectly produced.  An example of this probability in the real
-        world is that `Amazon <https://www.amazon.com/>`__ consider it so
-        unlikely that they refuse to search for invalid published ISBNs.
+def toI13(isbn):
+    """Converts supplied ISBN (either ISBN-10 or ISBN-13) to a stripped
+ISBN-13."""
+    if (isValid(isbn)==False):
+        raise "Invalid ISBN"
+    if isI13(isbn):
+        return isbn_strip(isbn)
+    else:
+        return convert(isbn)
 
-    Args:
-        isbn (str): SBN, ISBN-10 or ISBN-13
-
-    Returns:
-        ``bool``: ``True`` if ISBN is valid
-
-    """
-    isbn = _isbn_cleanse(isbn)
-    return isbn[-1].upper() == calculate_checksum(isbn[:-1])
+def url(type,isbn):
+    """Returns a URL for a book, corresponding to the "type" and the "isbn"
+provided. This function is likely to go out-of-date quickly, and is
+provided mainly as an example of a potential use-case for the module.
+Currently allowed types are "google-books" (the default if the type is
+not recognised), "amazon", "amazon-uk", "blackwells".
+"""
+    short=toI10(isbn)
+    if type=="amazon":
+        return "http://www.amazon.com/o/ASIN/"+short
+    elif type=="amazon-uk":
+        return "http://www.amazon.co.uk/o/ASIN/"+short
+    elif type=="blackwells":
+        return "http://bookshop.blackwell.co.uk/jsp/welcome.jsp?action=search&type=isbn&term="+short
+    else:
+        return "http://books.google.com/books?vid="+short
