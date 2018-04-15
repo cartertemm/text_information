@@ -10,7 +10,10 @@ import json
 import ui
 import api
 import textInfos
+import addonHandler
+addonHandler.initTranslation()
 import treeInterceptorHandler
+import scriptHandler
 import tones
 import isbn
 import threading
@@ -24,6 +27,7 @@ a, b, c=imp.find_module("bs4")
 BeautifulSoup=imp.load_module("bs4", a, b, c).BeautifulSoup
 sys.path.remove(sys.path[-1])
 
+last=""
 IPV4=re.compile(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
 IPV6 = re.compile(r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$")
 phone_number=re.compile(r"^(\+[0-9]{1,3})?\s?(\([2-9]|[2-9])(\d{2}|\d{2}\))(-|.|\s)?\d{3}(-|.|\s)?\d{4}$")
@@ -68,13 +72,16 @@ def get(addr):
 	try:
 		response=urllib.urlopen(addr).read()
 	except IOError as i:
-		if str(i).find("Errno 11001")>-1: return "error making connection"
+		if str(i).find("Errno 11001")>-1: return _("error making connection")
 		elif str(i).find("Errno 10060")>-1: return "error making connection"
 		elif str(i).find("Errno 10061")>-1: return "error, connection refused by target"
 		else: return "error: "+str(i)
+	except Exception as i:
+		return "error: "+str(i)
 	return response
 
 def get_ip_info(ip):
+	global last
 	response=get("http://api.ipinfodb.com/v3/ip-city?"+urllib.urlencode({"key":IPInfoDBAPIKey,"ip":ip,"format":"json"}))
 	if response.startswith("error"):
 		tones.beep(150, 200)
@@ -86,9 +93,11 @@ def get_ip_info(ip):
 		ui.message("error in response "+response["statusMessage"])
 	else:
 		tones.beep(300, 200)
-		ui.message("country: "+response["countryName"]+", region: "+response["regionName"]+", city: "+response["cityName"]+", zipcode: "+response["zipCode"]+", longitude: "+response["longitude"]+", latitude: "+response["latitude"]+", timezone: "+response["timeZone"])
+		last="country: "+response["countryName"]+". region: "+response["regionName"]+". city: "+response["cityName"]+". zipcode: "+response["zipCode"]+". longitude: "+response["longitude"]+". latitude: "+response["latitude"]+". timezone: "+response["timeZone"]
+		ui.message(last)
 
 def get_book_info(isbn):
+	global last
 	isbn=isbn.replace(" ","")
 	isbn=isbn.replace("-","")
 	response=get("https://www.googleapis.com/books/v1/volumes?q=isbn:"+isbn)
@@ -99,13 +108,15 @@ def get_book_info(isbn):
 	response=json.loads(response)
 	if not response["totalItems"]:
 		tones.beep(150, 200)
-		ui.message("no book with that ISBN found")
+		ui.message(_("no book with that ISBN found"))
 	else:
 		tones.beep(300, 200)
 		info=response["items"][0]["volumeInfo"]
-		ui.message("title: "+info["title"]+", author (s): "+", ".join(info["authors"])+", language: "+info["language"]+", description: "+info["description"]+", maturity rating: "+info["maturityRating"]+", published date: "+info["publishedDate"])
+		last="title: "+info["title"]+". author (s): "+", ".join(info["authors"])+". language: "+info["language"]+". description: "+info["description"]+". maturity rating: "+info["maturityRating"]+". published date: "+info["publishedDate"]
+		ui.message(last)
 
 def get_word_info(word):
+	global last
 	#parsing logic based on that seen in pydictionary
 	final=""
 	response=get("http://wordnetweb.princeton.edu/perl/webwn?s="+word)
@@ -129,9 +140,10 @@ def get_word_info(word):
 			final+=a.text+": "+", ".join(meanings)
 		tones.beep(300, 200)
 		ui.message(final)
+		last=final
 	except IndexError:
 		tones.beep(150, 200)
-		ui.message("unable to find definition for word")
+		ui.message(_("unable to find definition for word"))
 	except Exception as e:
 		ui.message(str(e))
 		tones.beep(150, 200)
@@ -142,7 +154,7 @@ def word_count(string):
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
-	scriptCategory="Text Information"
+	scriptCategory=_("Text Information")
 
 	def __init__(self, *args, **kwargs):
 		super(GlobalPlugin, self).__init__(*args, **kwargs)
@@ -156,8 +168,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			ui.message(_("There is no text on the clipboard"))
 			return
 		else:
-			self.get_info(text)
-	script_getClipInfo.__doc__="speaks information of text on the clipboard"
+			self.get_info(text.strip())
+	script_getClipInfo.__doc__=_("speaks information of text on the clipboard")
 
 	def script_getInfo(self, gesture):
 		text=""
@@ -170,32 +182,43 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except (RuntimeError, NotImplementedError):
 			info=None
 		if not info or info.isCollapsed:
-			ui.message("select something first")
+			ui.message(_("select something first"))
 			return
 		else:
 			self.get_info(info.text.strip())
-	script_getInfo.__doc__="speaks information for currently selected text"
+	script_getInfo.__doc__=_("speaks information for currently selected text")
+
+	def script_getLast(self, gesture):
+		if last:
+			r=scriptHandler.getLastScriptRepeatCount()
+			if r==0:
+				ui.message(last)
+			elif r==1:
+				ui.browseableMessage("\n".join(last.split(". ")), "text information")
+		else: ui.message(_("you haven't yet gotten info"))
+	script_getLast.__doc__=_("reports the last retrieved information in a browseable dialog")
 
 	def get_info(self, text):
 		final=""
 		w=word_count(text)
 		c=is_card(text)
 		if c:
-			final+=" "+c+" credit card"
+			t=_("credit card")
+			final+=" ".join((c, t))
 		elif isIPv4(text):
-			final+=" IPv4 address, retrieving information."
+			final+=_(" IPv4 address, retrieving information...")
 			threading.Thread(target=get_ip_info,args=(text,)).start()
 		elif isIPv6(text):
-			final+=" IPv6 address"
+			final+=_("IPv6 address")
 		elif is_phone_number(text):
-			final+=" phone number"
+			final+=_("phone number")
 		elif is_email(text):
-			final+="email"
+			final+=_("email")
 		elif is_isbn(text):
-			final+="isbn: retrieving information"
+			final+=_("isbn: retrieving information...")
 			threading.Thread(target=get_book_info,args=(text,)).start()
 		elif w==1:
-			final+="retrieving word information"
+			final+=_("retrieving word information...")
 			t=threading.Thread(target=get_word_info,args=(text,)).start()
 		if not final: final+="text contains "+str(w)+(" words" if w!=1 else " word")
 		ui.message(final)
@@ -203,4 +226,5 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	__gestures={
 		"kb:NVDA+;":"getInfo",
 		"kb:NVDA+shift+;":"getClipInfo",
+		"kb:NVDA+control+;":"getLast",
 	}

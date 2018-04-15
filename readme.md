@@ -1,6 +1,14 @@
 # Text Information
 
-This add-on allows for getting information based on selected text. Simply select something, then use NVDA+; (semicolon). Alternativly you can use NVDA+shift+; (semicolon) to get info about the clipboard text. You should, hopefully, be presented with something that fits the context.
+This add-on allows for getting information based on selected text. Simply select something and use a keystroke to get information. You should, hopefully, be presented with something that fits the context.
+
+note: This package is distributed under the terms of the GNU General Public License, version 2 or later. Please see the file COPYING.txt for further details.
+
+## keystrokes
+
+* NVDA+; (semicolon) - provides information based on the text that's selected
+* NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
+* NVDA+control+; (semicolon): speaks the last reported information. Press twice to get it displayed in a dialog.
 
 ## supported services
 
