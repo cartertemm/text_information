@@ -68,7 +68,7 @@ def get(addr):
 	try:
 		response=urllib.urlopen(addr).read()
 	except IOError as i:
-		if str(i).find("Errno 11001")>-1: return _("error making connection")
+		if str(i).find("Errno 11001")>-1: return "error making connection"
 		elif str(i).find("Errno 10060")>-1: return "error making connection"
 		elif str(i).find("Errno 10061")>-1: return "error, connection refused by target"
 		else: return "error: "+str(i)
@@ -104,11 +104,12 @@ def get_book_info(isbn):
 	response=json.loads(response)
 	if not response["totalItems"]:
 		tones.beep(150, 200)
+		#translators: message spoken when we're unable to find a book with that ISBN
 		ui.message(_("no book with that ISBN found"))
 	else:
 		tones.beep(300, 200)
 		info=response["items"][0]["volumeInfo"]
-		last="title: "+info["title"]+". author (s): "+", ".join(info["authors"])+". language: "+info["language"]+". description: "+info["description"]+". maturity rating: "+info["maturityRating"]+". published date: "+info["publishedDate"]
+		last=_("title")+": "+info["title"]+". "+_("author (s)")+": "+", ".join(info["authors"])+". "+_("language")+": "+info["language"]+". "+_("description")+": "+info["description"]+". "+_("maturity rating")+": "+info["maturityRating"]+". "+_("published date")+": "+info["publishedDate"]
 		ui.message(last)
 
 def get_word_info(word):
@@ -161,6 +162,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except TypeError:
 			text = None
 		if not text or not isinstance(text,basestring):
+			#translators: message spoken when the clipboard is empty
 			ui.message(_("There is no text on the clipboard"))
 			return
 		else:
@@ -178,6 +180,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except (RuntimeError, NotImplementedError):
 			info=None
 		if not info or info.isCollapsed:
+			#translators: message spoken when no text is selected
 			ui.message(_("select something first"))
 			return
 		else:
@@ -191,7 +194,9 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 				ui.message(last)
 			elif r==1:
 				ui.browseableMessage("\n".join(last.split(". ")), "text information")
-		else: ui.message(_("you haven't yet gotten info"))
+		else:
+			#translators: message spoken when the user tries getting previous information but there is none
+			ui.message(_("you haven't yet gotten info"))
 	script_getLast.__doc__=_("reports the last retrieved information in a browseable dialog")
 
 	def get_info(self, text):
@@ -202,6 +207,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			t=_("credit card")
 			final+=" ".join((c, t))
 		elif isIPv4(text):
+			#translators: message spoken after selecting text that contains an IP v4 address
 			final+=_(" IPv4 address, retrieving information...")
 			threading.Thread(target=get_ip_info,args=(text,)).start()
 		elif isIPv6(text):
@@ -211,9 +217,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		elif is_email(text):
 			final+=_("email")
 		elif is_isbn(text):
+			#translators: message spoken after text is selected that contains an ISBN
 			final+=_("isbn: retrieving information...")
 			threading.Thread(target=get_book_info,args=(text,)).start()
 		elif w==1:
+			#translators: message spoken after selecting text that contains a word (will be defined)
 			final+=_("retrieving word information...")
 			t=threading.Thread(target=get_word_info,args=(text,)).start()
 		if not final: final+="text contains "+str(w)+(" words" if w!=1 else " word")

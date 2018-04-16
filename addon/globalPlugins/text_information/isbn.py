@@ -79,6 +79,9 @@ def convert(isbn):
 def isValid(isbn):
     """Check the validity of an ISBN. Works for either ISBN-10 or ISBN-13."""
     short=isbn_strip(isbn)
+    try:
+        int(isbn)
+    except ValueError: return False
     if len(short)==10:
         return isI10(short)
     elif len(short)==13:

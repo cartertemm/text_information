@@ -6,7 +6,9 @@ note: This package is distributed under the terms of the GNU General Public Lice
 
 ## keystrokes
 
-* NVDA+; (semicolon) - provides information based on the text that's selected
+note: These keystrokes asume your using the english keyboard layout, and might not work otherwise. If there's a problem, first try changing them in the input gestures dialog.
+
+* NVDA+; (semicolon): provides information based on the text that's selected
 * NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
 * NVDA+control+; (semicolon): speaks the last reported information. Press twice to get it displayed in a dialog.
 
