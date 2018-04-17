@@ -65,31 +65,49 @@ def is_isbn(text):
 	return isbn.isValid(str(text))
 
 def get(addr):
+	#translators: error
+	error=_("error")
 	try:
 		response=urllib.urlopen(addr).read()
 	except IOError as i:
-		if str(i).find("Errno 11001")>-1: return "error making connection"
-		elif str(i).find("Errno 10060")>-1: return "error making connection"
-		elif str(i).find("Errno 10061")>-1: return "error, connection refused by target"
-		else: return "error: "+str(i)
+		#translators: message spoken when we can't connect
+		error_connection=_("error making connection")
+		if str(i).find("Errno 11001")>-1:
+			tones.beep(150, 200)
+			ui.message(error_connection)
+			return
+		elif str(i).find("Errno 10060")>-1:
+			tones.beep(150, 200)
+			ui.message(error_connection)
+			return
+		elif str(i).find("Errno 10061")>-1:
+			tones.beep(150, 200)
+			#translators: message spoken when the connection is refused by our target
+			ui.message(_("error, connection refused by target"))
+			return
+		else:
+			tones.beep(150, 200)
+			ui.message(error+": "+str(i))
+			return
 	except Exception as i:
-		return "error: "+str(i)
+		tones.beep(150, 200)
+		ui.message(error+": "+str(i))
+		return
 	return response
 
 def get_ip_info(ip):
 	global last
 	response=get("http://api.ipinfodb.com/v3/ip-city?"+urllib.urlencode({"key":IPInfoDBAPIKey,"ip":ip,"format":"json"}))
-	if response.startswith("error"):
-		tones.beep(150, 200)
-		ui.message(response)
+	if not response:
 		return
 	response=json.loads(response)
 	if response["statusCode"] == "ERROR":
 		tones.beep(150, 200)
-		ui.message("error in response "+response["statusMessage"])
+		#translators: message, followed by the error, spoken when the response returned contains an error
+		ui.message(_("error in response ")+response["statusMessage"])
 	else:
 		tones.beep(300, 200)
-		last="country: "+response["countryName"]+". region: "+response["regionName"]+". city: "+response["cityName"]+". zipcode: "+response["zipCode"]+". longitude: "+response["longitude"]+". latitude: "+response["latitude"]+". timezone: "+response["timeZone"]
+		last=_("country")+": "+response["countryName"]+". "+_("region")+": "+response["regionName"]+". "+_("city")+": "+response["cityName"]+". "+_("zipcode")+": "+response["zipCode"]+". "+_("longitude")+": "+response["longitude"]+". "+_("latitude")+": "+response["latitude"]+". "+_("timezone")+": "+response["timeZone"]
 		ui.message(last)
 
 def get_book_info(isbn):
@@ -97,9 +115,7 @@ def get_book_info(isbn):
 	isbn=isbn.replace(" ","")
 	isbn=isbn.replace("-","")
 	response=get("https://www.googleapis.com/books/v1/volumes?q=isbn:"+isbn)
-	if response.startswith("error"):
-		tones.beep(150, 200)
-		ui.message(response)
+	if not response:
 		return
 	response=json.loads(response)
 	if not response["totalItems"]:
@@ -117,9 +133,7 @@ def get_word_info(word):
 	#parsing logic based on that seen in pydictionary
 	final=""
 	response=get("http://wordnetweb.princeton.edu/perl/webwn?s="+word)
-	if response.startswith("error"):
-		tones.beep(150, 200)
-		ui.message(response)
+	if not response:
 		return
 	try:
 		response=BeautifulSoup(response)
