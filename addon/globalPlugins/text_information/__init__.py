@@ -70,7 +70,7 @@ def get(addr):
 	try:
 		response=urllib.urlopen(addr).read()
 	except IOError as i:
-		#translators: message spoken when we can't connect
+		#translators: message spoken when we can't connect (error with connection)
 		error_connection=_("error making connection")
 		if str(i).find("Errno 11001")>-1:
 			tones.beep(150, 200)
@@ -120,7 +120,7 @@ def get_book_info(isbn):
 	response=json.loads(response)
 	if not response["totalItems"]:
 		tones.beep(150, 200)
-		#translators: message spoken when we're unable to find a book with that ISBN
+		#translators: message spoken when we're unable to find a book with the given ISBN
 		ui.message(_("no book with that ISBN found"))
 	else:
 		tones.beep(300, 200)
@@ -154,6 +154,7 @@ def get_word_info(word):
 		last=final
 	except IndexError:
 		tones.beep(150, 200)
+		#translators: message spoken when we're unable to find a definition for the given word
 		ui.message(_("unable to find definition for word"))
 	except Exception as e:
 		ui.message(str(e))
@@ -203,6 +204,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def script_getLast(self, gesture):
 		if last:
+			#pressing once will speak info, twice will show a BrowseableDialog
 			r=scriptHandler.getLastScriptRepeatCount()
 			if r==0:
 				ui.message(last)
@@ -218,6 +220,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		w=word_count(text)
 		c=is_card(text)
 		if c:
+			#translators: credit card
 			t=_("credit card")
 			final+=" ".join((c, t))
 		elif isIPv4(text):
@@ -225,10 +228,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			final+=_(" IPv4 address, retrieving information...")
 			threading.Thread(target=get_ip_info,args=(text,)).start()
 		elif isIPv6(text):
-			final+=_("IPv6 address")
+			#translators: message spoken after selecting text that contains an IP v6 address
+			final+=_("IPv6 address, retrieving information...")
+			threading.Thread(target=get_ip_info,args=(text,)).start()
+		#here for completeness. We'll hopefully have something for these in the future
 		elif is_phone_number(text):
+			#translators: phone number
 			final+=_("phone number")
 		elif is_email(text):
+			#translators: email
 			final+=_("email")
 		elif is_isbn(text):
 			#translators: message spoken after text is selected that contains an ISBN
