@@ -195,11 +195,15 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except (RuntimeError, NotImplementedError):
 			info=None
 		if not info or info.isCollapsed:
-			#translators: message spoken when no text is selected
-			ui.message(_("select something first"))
-			return
-		else:
-			self.get_info(info.text.strip())
+			#No text selected, try grabbing word under review cursor
+			info=api.getReviewPosition().copy()
+			try:
+				info.expand(textInfos.UNIT_WORD)
+			except AttributeError: #Nothing more we can do
+				#translators: message spoken when no text is selected or focused
+				ui.message(_("select or focus something first"))
+				return
+		self.get_info(info.text.strip())
 	script_getInfo.__doc__=_("speaks information for currently selected text")
 
 	def script_getLast(self, gesture):
