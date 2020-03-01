@@ -23,6 +23,10 @@ Currently, the following features are supported:
 
 Note: Regular expressions are used to verify data. There are currently some that aren't used, phone numbers and emails. This might be changed in the future.
 
+## a note regarding python 3
+
+As of 2019.3, all NVDA add-ons must be python 3 compatible. If you are for some reason running an older version, [1.0](https://github.com/cartertemm/text_information/releases/download/1.0/textInformation-1.0.nvda-addon) is the last version usable by python 2.
+
 ## contributing
 
 Contributions are appreciated. You can either submit a PR, or get in contact with the following info:
