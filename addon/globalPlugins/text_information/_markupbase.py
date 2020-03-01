@@ -1,8 +1,7 @@
 """Shared support for scanning document type declarations in HTML and XHTML.
 
-This module is used as a foundation for the HTMLParser and sgmllib
-modules (indirectly, for htmllib as well).  It has no documented
-public API and should not be used directly.
+This module is used as a foundation for the html.parser module.  It has no
+documented public API and should not be used directly.
 
 """
 
@@ -28,7 +27,7 @@ class ParserBase:
     def __init__(self):
         if self.__class__ is ParserBase:
             raise RuntimeError(
-                "markupbase.ParserBase must be subclassed")
+                "_markupbase.ParserBase must be subclassed")
 
     def error(self, message):
         raise NotImplementedError(
@@ -127,7 +126,7 @@ class ParserBase:
                 # this could be handled in a separate doctype parser
                 if decltype == "doctype":
                     j = self._parse_doctype_subset(j + 1, i)
-                elif decltype in ("attlist", "linktype", "link", "element"):
+                elif decltype in {"attlist", "linktype", "link", "element"}:
                     # must tolerate []'d groups in a content model in an element declaration
                     # also in data attribute specifications of attlist declaration
                     # also link type declaration subsets in linktype declarations
@@ -150,10 +149,10 @@ class ParserBase:
         sectName, j = self._scan_name( i+3, i )
         if j < 0:
             return j
-        if sectName in ("temp", "cdata", "ignore", "include", "rcdata"):
+        if sectName in {"temp", "cdata", "ignore", "include", "rcdata"}:
             # look for standard ]]> ending
             match= _markedsectionclose.search(rawdata, i+3)
-        elif sectName in ("if", "else", "endif"):
+        elif sectName in {"if", "else", "endif"}:
             # look for MS Office ]> ending
             match= _msmarkedsectionclose.search(rawdata, i+3)
         else:
@@ -208,7 +207,7 @@ class ParserBase:
                 name, j = self._scan_name(j + 2, declstartpos)
                 if j == -1:
                     return -1
-                if name not in ("attlist", "element", "entity", "notation"):
+                if name not in {"attlist", "element", "entity", "notation"}:
                     self.updatepos(declstartpos, j + 2)
                     self.error(
                         "unknown declaration %r in internal subset" % name)

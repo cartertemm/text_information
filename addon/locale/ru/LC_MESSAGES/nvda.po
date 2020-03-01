@@ -1,0 +1,148 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Text information 1.0\n"
+"POT-Creation-Date: 2018-05-06 14:06+0300\n"
+"PO-Revision-Date: \n"
+"Last-Translator: Alex Yeshanu <eshanuap@gmail.com>\n"
+"Language-Team: \n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.0.4\n"
+"X-Poedit-Basepath: ../../../globalPlugins/text_information\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: __init__.py:69
+msgid "error"
+msgstr "ошибка"
+
+#: __init__.py:74
+msgid "error making connection"
+msgstr "ошибка соединения"
+
+#: __init__.py:86
+msgid "error, connection refused by target"
+msgstr "ошибка, соединение отклонено"
+
+#: __init__.py:107
+msgid "error in response "
+msgstr "ошибка в ответе "
+
+#: __init__.py:110
+msgid "country"
+msgstr "страна"
+
+#: __init__.py:110
+msgid "region"
+msgstr "регион"
+
+#: __init__.py:110
+msgid "city"
+msgstr "город"
+
+#: __init__.py:110
+msgid "zipcode"
+msgstr "индекс"
+
+#: __init__.py:110
+msgid "longitude"
+msgstr "долгота"
+
+#: __init__.py:110
+msgid "latitude"
+msgstr "широта"
+
+#: __init__.py:110
+msgid "timezone"
+msgstr "часовой пояс"
+
+#: __init__.py:124
+msgid "no book with that ISBN found"
+msgstr "нет книги с этим ISBN"
+
+#: __init__.py:128
+msgid "title"
+msgstr "название"
+
+#: __init__.py:128
+msgid "author (s)"
+msgstr "автор (ы)"
+
+#: __init__.py:128
+msgid "language"
+msgstr "язык"
+
+#: __init__.py:128
+msgid "description"
+msgstr "описание"
+
+#: __init__.py:128
+msgid "maturity rating"
+msgstr "рейтинг"
+
+#: __init__.py:128
+msgid "published date"
+msgstr "дата публикации"
+
+#: __init__.py:158
+msgid "unable to find definition for word"
+msgstr "не в состоянии найти определение слова"
+
+#: __init__.py:169
+msgid "Text Information"
+msgstr "Текстовая информация"
+
+#: __init__.py:181
+msgid "There is no text on the clipboard"
+msgstr "В буфере обмена нет текста"
+
+#: __init__.py:185
+msgid "speaks information of text on the clipboard"
+msgstr "говорит информацию о тексте в буфере обмена"
+
+#: __init__.py:199
+msgid "select something first"
+msgstr "сначала что-то надо выделить"
+
+#: __init__.py:203
+msgid "speaks information for currently selected text"
+msgstr "говорит информацию для выбранного в данный момент текста"
+
+#: __init__.py:215
+msgid "you haven't yet gotten info"
+msgstr "вы ещё не получили информацию"
+
+#: __init__.py:216
+msgid "reports the last retrieved information in a browseable dialog"
+msgstr ""
+"сообщает последнюю полученную информацию в диалоговом окне с возможностью "
+"просмотра"
+
+#: __init__.py:224
+msgid "credit card"
+msgstr "кредитная карта"
+
+#: __init__.py:228
+msgid " IPv4 address, retrieving information..."
+msgstr " IPv4 адрес, получение информации..."
+
+#: __init__.py:232
+msgid "IPv6 address, retrieving information..."
+msgstr "IPv6 адрес, получение информации..."
+
+#: __init__.py:237
+msgid "phone number"
+msgstr "номер телефона"
+
+#: __init__.py:240
+msgid "email"
+msgstr "эл. почта"
+
+#: __init__.py:243
+msgid "isbn: retrieving information..."
+msgstr "isbn: получение информации..."
+
+#: __init__.py:247
+msgid "retrieving word information..."
+msgstr "получение информации о слове..."

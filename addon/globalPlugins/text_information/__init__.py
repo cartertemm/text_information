@@ -3,7 +3,10 @@
 
 #unreliable API key. If your serious about IP geolocale, best bet is to generate your own at <http://ipinfodb.com/api>
 IPInfoDBAPIKey="32ccf9b820f3c7a8c48c62bc3586582ed3b05faedb78ef90249941fa4de2e183"
-import urllib
+#In python 3, urllib has been reorganized
+#import urllib
+from urllib.request import urlopen
+from urllib.parse import urlencode
 #it might be nice to provide more log output
 #from logHandler import log
 import json
@@ -15,13 +18,13 @@ addonHandler.initTranslation()
 import treeInterceptorHandler
 import scriptHandler
 import tones
-import isbn
 import threading
 import globalPluginHandler
 import re
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+import isbn
 import imp
 a, b, c=imp.find_module("bs4")
 BeautifulSoup=imp.load_module("bs4", a, b, c).BeautifulSoup
@@ -68,7 +71,7 @@ def get(addr):
 	#translators: error
 	error=_("error")
 	try:
-		response=urllib.urlopen(addr).read()
+		response=urlopen(addr).read()
 	except IOError as i:
 		#translators: message spoken when we can't connect (error with connection)
 		error_connection=_("error making connection")
@@ -97,7 +100,7 @@ def get(addr):
 
 def get_ip_info(ip):
 	global last
-	response=get("http://api.ipinfodb.com/v3/ip-city?"+urllib.urlencode({"key":IPInfoDBAPIKey,"ip":ip,"format":"json"}))
+	response=get("http://api.ipinfodb.com/v3/ip-city?"+urlencode({"key":IPInfoDBAPIKey,"ip":ip,"format":"json"}))
 	if not response:
 		return
 	response=json.loads(response)
