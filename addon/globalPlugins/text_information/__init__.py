@@ -179,7 +179,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			text = api.getClipData()
 		except TypeError:
 			text = None
-		if not text or not isinstance(text,basestring):
+		if not text or not isinstance(text, str):
 			#translators: message spoken when the clipboard is empty
 			ui.message(_("There is no text on the clipboard"))
 			return
