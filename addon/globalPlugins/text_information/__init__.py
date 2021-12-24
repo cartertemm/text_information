@@ -1,8 +1,6 @@
 #text information add-on: provides information about selected text
 #Copyright (C) 2018 Carter Temm
 
-#unreliable API key. If your serious about IP geolocale, best bet is to generate your own at <http://ipinfodb.com/api>
-IPInfoDBAPIKey="32ccf9b820f3c7a8c48c62bc3586582ed3b05faedb78ef90249941fa4de2e183"
 #In python 3, urllib has been reorganized
 #import urllib
 from urllib.request import urlopen
@@ -100,17 +98,21 @@ def get(addr):
 
 def get_ip_info(ip):
 	global last
-	response=get("http://api.ipinfodb.com/v3/ip-city?"+urlencode({"key":IPInfoDBAPIKey,"ip":ip,"format":"json"}))
+	response=get("http://ip-api.com/json/"+ip+"?"+urlencode({"fields":"status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,mobile,proxy"}))
 	if not response:
 		return
 	response=json.loads(response)
-	if response["statusCode"] == "ERROR":
+	if response["status"] != "success":
 		tones.beep(150, 200)
 		#translators: message, followed by the error, spoken when the response returned contains an error
-		ui.message(_("error in response ")+response["statusMessage"])
+		ui.message(_("error obtaining IP info ")+response["message"])
 	else:
 		tones.beep(300, 200)
-		last=_("country")+": "+response["countryName"]+". "+_("region")+": "+response["regionName"]+". "+_("city")+": "+response["cityName"]+". "+_("zipcode")+": "+response["zipCode"]+". "+_("longitude")+": "+response["longitude"]+". "+_("latitude")+": "+response["latitude"]+". "+_("timezone")+": "+response["timeZone"]
+		last=_("country")+": "+response["country"]+". "+_("region")+": "+response["regionName"]+". "+_("city")+": "+response["city"]+". "+_("zipcode")+": "+response["zip"]+". "+_("longitude")+": "+str(response["lon"])+". "+_("latitude")+": "+str(response["lat"])+". "+_("timezone")+": "+response["timezone"]+". "+_("ISP")+": "+response["isp"]
+		if response["mobile"] == True:
+			last += ". "+_("mobile connection")
+		if response["proxy"] == True:
+			last += ". "+_("Proxy, VPN or Tor exit address")
 		ui.message(last)
 
 def get_book_info(isbn):
