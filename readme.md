@@ -1,36 +1,40 @@
 # Text Information
 
-This add-on allows for getting information based on selected text. Simply select something and use a keystroke to get information. You should, hopefully, be presented with something that fits the context.
+This add-on provides users with contextual information, fitting a wide variety of use cases. It will e.g. give you the meaning of a word with a single keypress. Simply select something, use your assigned keystroke, and wait.
 
-note: This package is distributed under the terms of the GNU General Public License, version 2 or later. Please see the file COPYING.txt for further details.
-
-## keystrokes
-
-note: These keystrokes asume your using the english keyboard layout, and might not work otherwise. If there's a problem, first try changing them in the input gestures dialog.
-
-* NVDA+; (semicolon): provides information based on the text that's selected
-* NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
-* NVDA+control+; (semicolon): speaks the last reported information. Press twice to get it displayed in a dialog.
-
-## supported services
+## Supported services
 
 Currently, the following features are supported:
 
-* IP address information using the IPInfoDB API. An API key is provided, however I by no means guarantee it'll always work. You can generate your own, and enter it at the top of __init__.py, replacing the old one.
+* IP address information. Includes geolocation, ISP, VPN/tor exit node and cellular network identification.
 * english dictionary definitions from the princeton wordnetweb. Note: these definitions are not the best, and the database lacks definitions for simple words, e.g. could, you, etc.
 * ISBN lookups via the google books API
-* credit card type verification
+* credit card type verification (Mastercard, Visa, Discover, Amex, etc)
 
-Note: Regular expressions are used to verify data. There are currently some that aren't used, phone numbers and emails. This might be changed in the future.
+Note: Regular expressions are used under the hood to verify data. This means that email addresses and card numbers will never leave your machine.
 
-## a note regarding python 3
+The add-on implements support for identifying phone numbers and email addresses as well, though no actual information is obtained. This is apt to change as soon as I can find a straightforward API that meets my specifications.
 
-As of 2019.3, all NVDA add-ons must be python 3 compatible. If you are for some reason running an older version, [1.0](https://github.com/cartertemm/text_information/releases/download/1.0/textInformation-1.0.nvda-addon) is the last version usable by python 2.
+## Keystrokes
 
-## contributing
+note: These keystrokes asume an English keyboard layout, and might not work otherwise. If you experience an issue, first try changing them in the input gestures dialog.
+
+* NVDA+; (semicolon): provides information based on the text that's selected
+* NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
+* NVDA+control+; (semicolon): speaks the last reported information. Press twice to get it displayed in a browsable dialog.
+
+## A note regarding python 3
+
+As of NVDA version 2019.3, all add-ons must be python 3 compatible. If you are for some reason running an older version, [1.0](https://github.com/cartertemm/text_information/releases/download/1.0/textInformation-1.0.nvda-addon) is the last version usable with python 2. Both should be considered deprecated.
+
+## Contributing
 
 Contributions are appreciated. You can either submit a PR, or get in contact with the following info:
 
 twitter: @cartertemm
 
-email: crtbraille@gmail.com
+email: cartertemm@gmail.com
+
+## Licensing
+
+This package is distributed under the terms of the GNU General Public License, version 2 or later. Please see the file COPYING.txt for further details.
