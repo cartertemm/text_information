@@ -1,6 +1,7 @@
 # Text Information
 
-This add-on provides users with contextual information, fitting a wide variety of use cases. It will e.g. give you the meaning of a word with a single keypress. Simply select something, use your assigned keystroke, and wait.
+This add-on provides users with contextual information, fitting a wide variety of use cases.
+With a single keypress, it can give you the meaning of a word, geolocate an IP address, and tell you about a book (via ISBN). Simply select something, use your assigned keystroke, and wait.
 
 ## Supported services
 
@@ -11,13 +12,13 @@ Currently, the following features are supported:
 * ISBN lookups via the google books API
 * credit card type verification (Mastercard, Visa, Discover, Amex, etc)
 
-Note: Regular expressions are used under the hood to verify data. This means that email addresses and card numbers will never leave your machine.
+The add-on implements support for identifying phone numbers and email addresses as well, though no actual information is obtained. This is apt to change as soon as I can find something to do with them, and a straightforward API that meets our specifications.
 
-The add-on implements support for identifying phone numbers and email addresses as well, though no actual information is obtained. This is apt to change as soon as I can find a straightforward API that meets my specifications.
+Note: Regular expressions are used under the hood to verify data. This means that email addresses and card numbers will never leave your machine.
 
 ## Keystrokes
 
-note: These keystrokes asume an English keyboard layout, and might not work otherwise. If you experience an issue, first try changing them in the input gestures dialog.
+note: These bindings asume an English keyboard layout, and might not work otherwise. If you experience an issue, first try changing them in the input gestures dialog.
 
 * NVDA+; (semicolon): provides information based on the text that's selected
 * NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
@@ -33,7 +34,7 @@ Contributions are appreciated. You can either submit a PR, or get in contact wit
 
 twitter: @cartertemm
 
-email: cartertemm@gmail.com
+email: cartertemm (at) gmail (dot) com
 
 ## Licensing
 
