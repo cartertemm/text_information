@@ -23,7 +23,7 @@ addon_info = {
 	# Author(s)
 	"addon_author" : u"Carter Temm <cartertemm@gmail.com>",
 	# URL for the add-on documentation support
-	"addon_url" : "http://github.com/cartertemm/text_information",
+	"addon_url" : "https://github.com/cartertemm/text_information",
 	# Documentation file name
 	"addon_docFileName" : "readme.html",
 	# Minimum NVDA version supported (e.g. "2018.3.0", minor version is optional)
