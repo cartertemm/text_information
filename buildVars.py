@@ -17,9 +17,9 @@ addon_info = {
 	"addon_summary" : _("text information"),
 	# Add-on description
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
-	"addon_description" : _("""Provides information about selected text. Press NVDA+; (semicolon) to activate, NVDA + shift + ; to get information from the clipboard, and NVDA + control + ; to speak the last retrieved information. You can press this twice to have it displayed in a browseable dialog. Note: for non-english keyboard layouts these gestures might need to be redefined in the input gestures dialog."""),
+	"addon_description" : _("""Provides information like dictionary definitions for selected text. Press NVDA+; (semicolon) to activate, NVDA + shift + ; to get information from the clipboard, and NVDA + control + ; to speak the last retrieved information. You can press this twice to have it displayed in a browseable dialog. Note: for non-english keyboard layouts these gestures might need to be redefined in the input gestures dialog."""),
 	# version
-	"addon_version" : "1.3",
+	"addon_version" : "1.4",
 	# Author(s)
 	"addon_author" : u"Carter Temm <cartertemm@gmail.com>",
 	# URL for the add-on documentation support

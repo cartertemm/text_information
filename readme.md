@@ -8,7 +8,7 @@ With a single keypress, it can give you the meaning of a word, geolocate an IP a
 Currently, the following features are supported:
 
 * IP address information. Includes geolocation, ISP, VPN/tor exit node and cellular network identification.
-* english dictionary definitions from the princeton wordnetweb. Note: these definitions are not the best, and the database lacks definitions for simple words, e.g. could, you, etc.
+* english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of [Dictionary API](https://github.com/cartertemm/dictionary-api), [web version here](https://dictionary.ctemm.me/)
 * ISBN lookups via the google books API
 * credit card type verification (Mastercard, Visa, Discover, Amex, etc)
 
@@ -26,7 +26,7 @@ note: These bindings asume an English keyboard layout, and might not work otherw
 
 ## A note regarding python 3
 
-As of NVDA version 2019.3, all add-ons must be python 3 compatible. If you are for some reason running an older version, [1.0](https://github.com/cartertemm/text_information/releases/download/1.0/textInformation-1.0.nvda-addon) is the last version usable with python 2. Both should be considered deprecated.
+As of NVDA version 2019.3, all add-ons must be python 3 compatible. If you are for some reason running an older version, [1.0](https://github.com/cartertemm/text_information/releases/download/1.0/textInformation-1.0.nvda-addon) is the last version usable with python 2, and dictionary definitions no longer work due to the deprecation of the Princeton Wordnetweb. Both should be considered unsupported.
 
 ## Contributing
 
