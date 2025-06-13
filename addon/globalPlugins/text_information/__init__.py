@@ -136,34 +136,17 @@ def get_book_info(isbn):
 def get_word_info(word):
 	global last
 	#parsing logic based on that seen in pydictionary
-	final=""
-	response=get("http://wordnetweb.princeton.edu/perl/webwn?s="+word)
+	response=get("https://dictionary.ctemm.me/api/word/plain/"+word)
 	if not response:
-		return
-	try:
-		response=BeautifulSoup(response)
-		types=response.findAll("h3")
-		lists=response.findAll("ul")
-		for a in types:
-			reg=str(lists[types.index(a)])
-			meanings=[]
-			for x in re.findall(r"\((.*?)\)", reg):
-				if "often followed by" in x:
-					pass
-				elif len(x) > 5 or " " in str(x):
-					meanings.append(x)
-			if final: final+=". "
-			final+=a.text+": "+", ".join(meanings)
-		tones.beep(300, 200)
-		ui.message(final)
-		last=final
-	except IndexError:
 		tones.beep(150, 200)
-		#translators: message spoken when we're unable to find a definition for the given word
+		# translators: The message spoken when a word was not found.
 		ui.message(_("unable to find definition for word"))
-	except Exception as e:
-		ui.message(str(e))
-		tones.beep(150, 200)
+		return
+	response = response.decode()
+	tones.beep(300, 200)
+	ui.message(response)
+	last=response
+
 
 def word_count(string):
 	if not string: return 0
