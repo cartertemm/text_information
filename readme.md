@@ -22,7 +22,7 @@ note: These bindings asume an English keyboard layout, and might not work otherw
 
 * NVDA+; (semicolon): provides information based on the text that's selected
 * NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
-* NVDA+control+; (semicolon): speaks the last reported information. Press twice to get it displayed in a browsable dialog.
+* NVDA+control+; (semicolon): speaks the last reported information. Press twice quickly to get it displayed in a browsable dialog.
 
 ## A note regarding python 3
 
