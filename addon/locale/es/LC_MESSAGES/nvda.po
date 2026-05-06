@@ -1,0 +1,47 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the textInformation
+# package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: textInformation 1.5\n"
+"Report-Msgid-Bugs-To: nvda-translations@groups.io\n"
+"POT-Creation-Date: 2026-05-06 09:03-0700\n"
+"PO-Revision-Date: 2026-05-06 16:05+0000\n"
+"Last-Translator: Carter Temm <cartertemm@gmail.com>\n"
+"Language-Team: es <LL@li.org>\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: Babel 2.18.0\n"
+
+#. Add-on summary, usually the user visible name of the addon.
+#. Translators: Summary for this add-on to be shown on installation and add-on
+#. information.
+#: buildVars.py:17
+msgid "text information"
+msgstr "información de texto"
+
+#. Add-on description
+#. Translators: Long description to be shown for this add-on on add-on
+#. information from add-ons manager
+#: buildVars.py:20
+msgid ""
+"Provides information like dictionary definitions for selected text. Press "
+"NVDA+; (semicolon) to activate, NVDA + shift + ; to get information from the "
+"clipboard, and NVDA + control + ; to speak the last retrieved information. "
+"You can press this twice quickly to have it displayed in a browseable "
+"dialog. Note: for non-english keyboard layouts these gestures might need to "
+"be redefined in the input gestures dialog."
+msgstr ""
+"Proporciona información como definiciones de diccionario para el texto "
+"seleccionado. Presiona NVDA+; (punto y coma) para activar, NVDA + shift + ; "
+"para obtener información del portapapeles, y NVDA + control + ; para "
+"reproducir la última información obtenida. Puedes presionar esto dos veces "
+"rápidamente para mostrarlo en un diálogo navegable. Nota: para "
+"distribuciones de teclado distintas del inglés, es posible que estos gestos "
+"deban redefinirse en el diálogo de gestos de entrada."
