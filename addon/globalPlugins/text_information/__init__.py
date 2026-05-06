@@ -23,9 +23,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import isbn
-import imp
-a, b, c=imp.find_module("bs4")
-BeautifulSoup=imp.load_module("bs4", a, b, c).BeautifulSoup
+from bs4 import BeautifulSoup
 sys.path.remove(sys.path[-1])
 
 last=""
