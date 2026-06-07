@@ -113,11 +113,11 @@ def is_url(text):
 	return is_match(url, text)
 
 
-def get(addr):
+def get(addr, timeout=10):
 	# translators: error
 	error = _("error")
 	try:
-		response = urlopen(addr).read()
+		response = urlopen(addr, timeout=timeout).read()
 	except IOError as i:
 		# translators: message spoken when we can't connect (error with connection)
 		error_connection = _("error making connection")
@@ -264,7 +264,7 @@ def get_word_info(word):
 	last = response
 
 
-def get_url_info(addr):
+def get_url_info(addr, timeout=10):
 	# We violate DRY and implement parts of `get()` here, because we have to retrieve the headers and set a common user agent
 	# Ugly, but passable under the circumstances
 	global last
@@ -280,7 +280,7 @@ def get_url_info(addr):
 				"Accept-Encoding": "identity",
 			},
 		)
-		response = urlopen(req, timeout=10)
+		response = urlopen(req, timeout=timeout)
 		data = response.read(URL_MAX_BYTES)
 	except IOError as i:
 		tones.beep(150, 200)
