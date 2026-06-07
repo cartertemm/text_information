@@ -1,17 +1,19 @@
-#text information add-on: provides information about selected text
-#Copyright (C) 2018 Carter Temm
+# text information add-on: provides information about selected text
+# Copyright (C) 2018 Carter Temm
 
-#In python 3, urllib has been reorganized
-#import urllib
+# In python 3, urllib has been reorganized
+# import urllib
 from urllib.request import urlopen, Request
 from urllib.parse import urlencode, urlparse
-#it might be nice to provide more log output
-#from logHandler import log
+
+# it might be nice to provide more log output
+# from logHandler import log
 import json
 import ui
 import api
 import textInfos
 import addonHandler
+
 addonHandler.initTranslation()
 import treeInterceptorHandler
 import scriptHandler
@@ -21,36 +23,50 @@ import globalPluginHandler
 import re
 import sys
 import os
+
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import isbn
 from bs4 import BeautifulSoup
+
 sys.path.remove(sys.path[-1])
 
-#taken and partially modified from http://code.activestate.com/recipes/578019
+
+# taken and partially modified from http://code.activestate.com/recipes/578019
 def bytes2human(n):
-	symbols = ('KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
+	symbols = ("KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
 	prefix = {}
 	for i, s in enumerate(symbols):
 		prefix[s] = 1 << (i + 1) * 10
 	for s in reversed(symbols):
 		if n >= prefix[s]:
 			value = float(n) / prefix[s]
-			return '%.1f%s' % (value, s)
+			return "%.1f%s" % (value, s)
 	return "%sB" % n
 
-last=""
-IPV4=re.compile(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
-IPV6 = re.compile(r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$")
-phone_number=re.compile(r"^(\+[0-9]{1,3})?\s?(\([2-9]|[2-9])(\d{2}|\d{2}\))(-|.|\s)?\d{3}(-|.|\s)?\d{4}$")
-credit_cards={
-	"visa":re.compile(r"^4[0-9]{12}(?:[0-9]{3})?$"),
-	"MasterCard":re.compile(r"^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$"),
-	"American Express":re.compile(r"^3[47][0-9]{13}$"),
-	"Diners Club":re.compile(r"^3(?:0[0-5]|[68][0-9])[0-9]{11}$"),
-	"discover":re.compile(r"^6(?:011|5[0-9]{2})[0-9]{12}$"),
-	"JCB":re.compile(r"^(?:2131|1800|35\d{3})\d{11}$")
+
+last = ""
+IPV4 = re.compile(
+	r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+)
+IPV6 = re.compile(
+	r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$"
+)
+phone_number = re.compile(
+	r"^(\+[0-9]{1,3})?\s?(\([2-9]|[2-9])(\d{2}|\d{2}\))(-|.|\s)?\d{3}(-|.|\s)?\d{4}$"
+)
+credit_cards = {
+	"visa": re.compile(r"^4[0-9]{12}(?:[0-9]{3})?$"),
+	"MasterCard": re.compile(
+		r"^(?:5[1-5][0-9]{2}|222[1-9]|22[3-9][0-9]|2[3-6][0-9]{2}|27[01][0-9]|2720)[0-9]{12}$"
+	),
+	"American Express": re.compile(r"^3[47][0-9]{13}$"),
+	"Diners Club": re.compile(r"^3(?:0[0-5]|[68][0-9])[0-9]{11}$"),
+	"discover": re.compile(r"^6(?:011|5[0-9]{2})[0-9]{12}$"),
+	"JCB": re.compile(r"^(?:2131|1800|35\d{3})\d{11}$"),
 }
-email=re.compile(r"^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$")
+email = re.compile(
+	r"^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$"
+)
 url = re.compile(
 	r"^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(/[^\s]*)?$"
 )
@@ -61,104 +77,182 @@ CHROME_UA = (
 	"Chrome/125.0.0.0 Safari/537.36"
 )
 
+
 def is_match(obj, match):
 	return bool(obj.search(match))
+
 
 def isIPv4(addr):
 	return is_match(IPV4, addr)
 
+
 def isIPv6(addr):
 	return is_match(IPV6, addr)
+
 
 def is_phone_number(number):
 	return is_match(phone_number, number)
 
+
 def is_email(address):
 	return is_match(email, address)
 
+
 def is_card(number):
-	for (type, obj) in credit_cards.items():
-		if is_match(obj, number): return type
+	for type, obj in credit_cards.items():
+		if is_match(obj, number):
+			return type
 	return
+
 
 def is_isbn(text):
 	return isbn.isValid(str(text))
 
+
 def is_url(text):
 	return is_match(url, text)
 
+
 def get(addr):
-	#translators: error
-	error=_("error")
+	# translators: error
+	error = _("error")
 	try:
-		response=urlopen(addr).read()
+		response = urlopen(addr).read()
 	except IOError as i:
-		#translators: message spoken when we can't connect (error with connection)
-		error_connection=_("error making connection")
-		if str(i).find("Errno 11001")>-1:
+		# translators: message spoken when we can't connect (error with connection)
+		error_connection = _("error making connection")
+		if str(i).find("Errno 11001") > -1:
 			tones.beep(150, 200)
 			ui.message(error_connection)
 			return
-		elif str(i).find("Errno 10060")>-1:
+		elif str(i).find("Errno 10060") > -1:
 			tones.beep(150, 200)
 			ui.message(error_connection)
 			return
-		elif str(i).find("Errno 10061")>-1:
+		elif str(i).find("Errno 10061") > -1:
 			tones.beep(150, 200)
-			#translators: message spoken when the connection is refused by our target
+			# translators: message spoken when the connection is refused by our target
 			ui.message(_("error, connection refused by target"))
 			return
 		else:
 			tones.beep(150, 200)
-			ui.message(error+": "+str(i))
+			ui.message(error + ": " + str(i))
 			return
 	except Exception as i:
 		tones.beep(150, 200)
-		ui.message(error+": "+str(i))
+		ui.message(error + ": " + str(i))
 		return
 	return response
 
+
 def get_ip_info(ip):
 	global last
-	response=get("http://ip-api.com/json/"+ip+"?"+urlencode({"fields":"status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,mobile,proxy"}))
+	response = get(
+		"http://ip-api.com/json/"
+		+ ip
+		+ "?"
+		+ urlencode(
+			{
+				"fields": "status,message,country,regionName,city,zip,lat,lon,timezone,isp,org,mobile,proxy"
+			}
+		)
+	)
 	if not response:
 		return
-	response=json.loads(response)
+	response = json.loads(response)
 	if response["status"] != "success":
 		tones.beep(150, 200)
-		#translators: message, followed by the error, spoken when the response returned contains an error
-		ui.message(_("error obtaining IP info ")+response["message"])
+		# translators: message, followed by the error, spoken when the response returned contains an error
+		ui.message(_("error obtaining IP info ") + response["message"])
 	else:
 		tones.beep(300, 200)
-		last=_("country")+": "+response["country"]+". "+_("region")+": "+response["regionName"]+". "+_("city")+": "+response["city"]+". "+_("zipcode")+": "+response["zip"]+". "+_("longitude")+": "+str(response["lon"])+". "+_("latitude")+": "+str(response["lat"])+". "+_("timezone")+": "+response["timezone"]+". "+_("ISP")+": "+response["isp"]
+		last = (
+			_("country")
+			+ ": "
+			+ response["country"]
+			+ ". "
+			+ _("region")
+			+ ": "
+			+ response["regionName"]
+			+ ". "
+			+ _("city")
+			+ ": "
+			+ response["city"]
+			+ ". "
+			+ _("zipcode")
+			+ ": "
+			+ response["zip"]
+			+ ". "
+			+ _("longitude")
+			+ ": "
+			+ str(response["lon"])
+			+ ". "
+			+ _("latitude")
+			+ ": "
+			+ str(response["lat"])
+			+ ". "
+			+ _("timezone")
+			+ ": "
+			+ response["timezone"]
+			+ ". "
+			+ _("ISP")
+			+ ": "
+			+ response["isp"]
+		)
 		if response["mobile"] == True:
-			last += ". "+_("mobile connection")
+			last += ". " + _("mobile connection")
 		if response["proxy"] == True:
-			last += ". "+_("Proxy, VPN or Tor exit address")
+			last += ". " + _("Proxy, VPN or Tor exit address")
 		ui.message(last)
+
 
 def get_book_info(isbn):
 	global last
-	isbn=isbn.replace(" ","")
-	isbn=isbn.replace("-","")
-	response=get("https://www.googleapis.com/books/v1/volumes?q=isbn:"+isbn)
+	isbn = isbn.replace(" ", "")
+	isbn = isbn.replace("-", "")
+	response = get("https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn)
 	if not response:
 		return
-	response=json.loads(response)
+	response = json.loads(response)
 	if not response["totalItems"]:
 		tones.beep(150, 200)
-		#translators: message spoken when we're unable to find a book with the given ISBN
+		# translators: message spoken when we're unable to find a book with the given ISBN
 		ui.message(_("no book with that ISBN found"))
 	else:
 		tones.beep(300, 200)
-		info=response["items"][0]["volumeInfo"]
-		last=_("title")+": "+info["title"]+". "+_("author (s)")+": "+", ".join(info["authors"])+". "+_("language")+": "+info["language"]+". "+_("description")+": "+info["description"]+". "+_("maturity rating")+": "+info["maturityRating"]+". "+_("published date")+": "+info["publishedDate"]
+		info = response["items"][0]["volumeInfo"]
+		last = (
+			_("title")
+			+ ": "
+			+ info["title"]
+			+ ". "
+			+ _("author (s)")
+			+ ": "
+			+ ", ".join(info["authors"])
+			+ ". "
+			+ _("language")
+			+ ": "
+			+ info["language"]
+			+ ". "
+			+ _("description")
+			+ ": "
+			+ info["description"]
+			+ ". "
+			+ _("maturity rating")
+			+ ": "
+			+ info["maturityRating"]
+			+ ". "
+			+ _("published date")
+			+ ": "
+			+ info["publishedDate"]
+		)
 		ui.message(last)
+
 
 def get_word_info(word):
 	global last
-	#parsing logic based on that seen in pydictionary
-	response=get("https://dictionary.ctemm.me/api/word/plain/"+word)
+	# parsing logic based on that seen in pydictionary
+	response = get("https://dictionary.ctemm.me/api/word/plain/" + word)
 	if not response:
 		tones.beep(150, 200)
 		# translators: The message spoken when a word was not found.
@@ -167,21 +261,27 @@ def get_word_info(word):
 	response = response.decode()
 	tones.beep(300, 200)
 	ui.message(response)
-	last=response
+	last = response
+
 
 def get_url_info(addr):
+	# We violate DRY and implement parts of `get()` here, because we have to retrieve the headers and set a common user agent
+	# Ugly, but passable under the circumstances
 	global last
-	error=_("error")
+	error = _("error")
 	if not addr.startswith(("http://", "https://")):
-		addr="https://"+addr
-	original_domain=urlparse(addr).netloc
+		addr = "https://" + addr
+	original_domain = urlparse(addr).netloc
 	try:
-		req=Request(addr, headers={
-			"User-Agent": CHROME_UA,
-			"Accept-Encoding": "identity",
-		})
-		response=urlopen(req, timeout=10)
-		data=response.read(URL_MAX_BYTES)
+		req = Request(
+			addr,
+			headers={
+				"User-Agent": CHROME_UA,
+				"Accept-Encoding": "identity",
+			},
+		)
+		response = urlopen(req, timeout=10)
+		data = response.read(URL_MAX_BYTES)
 	except IOError as i:
 		tones.beep(150, 200)
 		if str(i).find("Errno 11001") > -1 or str(i).find("Errno 10060") > -1:
@@ -189,49 +289,52 @@ def get_url_info(addr):
 		elif str(i).find("Errno 10061") > -1:
 			ui.message(_("error, connection refused by target"))
 		else:
-			ui.message(error+": "+str(i))
+			ui.message(error + ": " + str(i))
 		return
 	except Exception as i:
 		tones.beep(150, 200)
-		ui.message(error+": "+str(i))
+		ui.message(error + ": " + str(i))
 		return
-	soup=BeautifulSoup(data, "html.parser")
-	title=soup.title.string.strip() if soup.title and soup.title.string else None
+	soup = BeautifulSoup(data, "html.parser")
+	title = soup.title.string.strip() if soup.title and soup.title.string else None
 	if not title:
 		tones.beep(150, 200)
 		# translators: message spoken when the page title cannot be retrieved
 		ui.message(_("unable to retrieve page title"))
 		return
-	fields=[]
-	fields.append(_("title")+": "+title)
-	desc_tag=soup.find("meta", attrs={"name": "description"})
+	fields = []
+	fields.append(_("title") + ": " + title)
+	desc_tag = soup.find("meta", attrs={"name": "description"})
 	if desc_tag:
-		desc=desc_tag.get("content", "").strip()
+		desc = desc_tag.get("content", "").strip()
 		if desc:
 			# translators: label for the page description field in URL output
-			fields.append(_("description")+": "+desc)
-	content_length=response.headers.get("Content-Length")
+			fields.append(_("description") + ": " + desc)
+	content_length = response.headers.get("Content-Length")
 	if content_length:
 		try:
 			# translators: label for the content length field in URL output
-			fields.append(_("content length")+": "+bytes2human(int(content_length)))
+			fields.append(_("content length") + ": " + bytes2human(int(content_length)))
 		except ValueError:
 			pass
-	final_domain=urlparse(response.geturl()).netloc
+	final_domain = urlparse(response.geturl()).netloc
 	if final_domain and final_domain != original_domain:
 		# translators: label spoken when a URL redirects to a different domain
-		fields.append(_("redirects to")+": "+final_domain)
+		fields.append(_("redirects to") + ": " + final_domain)
 	tones.beep(300, 200)
-	last=". ".join(fields)
+	last = ". ".join(fields)
 	ui.message(last)
 
+
 def word_count(string):
-	if not string: return 0
+	if not string:
+		return 0
 	return len(string.split())
+
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
-	scriptCategory=_("Text Information")
+	scriptCategory = _("Text Information")
 
 	def __init__(self, *args, **kwargs):
 		super(GlobalPlugin, self).__init__(*args, **kwargs)
@@ -242,88 +345,95 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 		except TypeError:
 			text = None
 		if not text or not isinstance(text, str):
-			#translators: message spoken when the clipboard is empty
+			# translators: message spoken when the clipboard is empty
 			ui.message(_("There is no text on the clipboard"))
 			return
 		else:
 			self.get_info(text.strip())
-	script_getClipInfo.__doc__=_("speaks information of text on the clipboard")
+
+	script_getClipInfo.__doc__ = _("speaks information of text on the clipboard")
 
 	def script_getInfo(self, gesture):
-		text=""
-		obj=api.getFocusObject()
-		treeInterceptor=obj.treeInterceptor
+		text = ""
+		obj = api.getFocusObject()
+		treeInterceptor = obj.treeInterceptor
 		if isinstance(treeInterceptor, treeInterceptorHandler.DocumentTreeInterceptor):
-			obj=treeInterceptor
+			obj = treeInterceptor
 		try:
-			info=obj.makeTextInfo(textInfos.POSITION_SELECTION)
+			info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
 		except (RuntimeError, NotImplementedError):
-			info=None
+			info = None
 		if not info or info.isCollapsed:
-			#No text selected, try grabbing word under review cursor
-			info=api.getReviewPosition().copy()
+			# No text selected, try grabbing word under review cursor
+			info = api.getReviewPosition().copy()
 			try:
 				info.expand(textInfos.UNIT_WORD)
-			except AttributeError: #Nothing more we can do
-				#translators: message spoken when no text is selected or focused
+			except AttributeError:  # Nothing more we can do
+				# translators: message spoken when no text is selected or focused
 				ui.message(_("select or focus something first"))
 				return
 		self.get_info(info.text.strip())
-	script_getInfo.__doc__=_("speaks information for currently selected text")
+
+	script_getInfo.__doc__ = _("speaks information for currently selected text")
 
 	def script_getLast(self, gesture):
 		if last:
-			#pressing once will speak info, twice will show a BrowseableDialog
-			r=scriptHandler.getLastScriptRepeatCount()
-			if r==0:
+			# pressing once will speak info, twice will show a BrowseableDialog
+			r = scriptHandler.getLastScriptRepeatCount()
+			if r == 0:
 				ui.message(last)
-			elif r==1:
+			elif r == 1:
 				ui.browseableMessage("\n".join(last.split(". ")), "text information")
 		else:
-			#translators: message spoken when the user tries getting previous information but there is none
+			# translators: message spoken when the user tries getting previous information but there is none
 			ui.message(_("you haven't yet gotten info"))
-	script_getLast.__doc__=_("reports the last retrieved information in a browseable dialog")
+
+	script_getLast.__doc__ = _(
+		"reports the last retrieved information in a browseable dialog"
+	)
 
 	def get_info(self, text):
-		final=""
-		w=word_count(text)
-		c=is_card(text)
+		final = ""
+		w = word_count(text)
+		c = is_card(text)
 		if c:
-			#translators: credit card
-			t=_("credit card")
-			final+=" ".join((c, t))
+			# translators: credit card
+			t = _("credit card")
+			final += " ".join((c, t))
 		elif isIPv4(text):
-			#translators: message spoken after selecting text that contains an IP v4 address
-			final+=_(" IPv4 address, retrieving information...")
-			threading.Thread(target=get_ip_info,args=(text,)).start()
+			# translators: message spoken after selecting text that contains an IP v4 address
+			final += _(" IPv4 address, retrieving information...")
+			threading.Thread(target=get_ip_info, args=(text,)).start()
 		elif isIPv6(text):
-			#translators: message spoken after selecting text that contains an IP v6 address
-			final+=_("IPv6 address, retrieving information...")
-			threading.Thread(target=get_ip_info,args=(text,)).start()
-		#here for completeness. We'll hopefully have something for these in the future
+			# translators: message spoken after selecting text that contains an IP v6 address
+			final += _("IPv6 address, retrieving information...")
+			threading.Thread(target=get_ip_info, args=(text,)).start()
+		# here for completeness. We'll hopefully have something for these in the future
 		elif is_phone_number(text):
-			#translators: phone number
-			final+=_("phone number")
+			# translators: phone number
+			final += _("phone number")
 		elif is_email(text):
-			#translators: email
-			final+=_("email")
+			# translators: email
+			final += _("email")
 		elif is_isbn(text):
-			#translators: message spoken after text is selected that contains an ISBN
-			final+=_("isbn: retrieving information...")
-			threading.Thread(target=get_book_info,args=(text,)).start()
+			# translators: message spoken after text is selected that contains an ISBN
+			final += _("isbn: retrieving information...")
+			threading.Thread(target=get_book_info, args=(text,)).start()
+		# Deliberately placed below the IP detection, since many IP v4 addresses would be caught by our URL regexp
 		elif is_url(text):
-			#translators: message spoken after selecting text that contains a URL
-			final+=_("URL, retrieving page information...")
-			threading.Thread(target=get_url_info,args=(text,)).start()
-		elif w==1:
-			#translators: message spoken after selecting text that contains a word (will be defined)
-			final+=_("retrieving word information...")
-			t=threading.Thread(target=get_word_info,args=(text,)).start()
-		if not final: final+="text contains "+str(w)+(" words" if w!=1 else " word")
+			# translators: message spoken after selecting text that contains a URL
+			final += _("URL, retrieving page information...")
+			threading.Thread(target=get_url_info, args=(text,)).start()
+		elif w == 1:
+			# translators: message spoken after selecting text that contains a word (will be defined)
+			final += _("retrieving word information...")
+			t = threading.Thread(target=get_word_info, args=(text,)).start()
+		if not final:
+			final += "text contains " + str(w) + (" words" if w != 1 else " word")
 		ui.message(final)
 
-	__gestures={
-		"kb:NVDA+;":"getInfo",
-		"kb:NVDA+shift+;":"getClipInfo",
-		"kb:NVDA+control+;":"getLast",
+	__gestures = {
+		"kb:NVDA+;": "getInfo",
+		"kb:NVDA+shift+;": "getClipInfo",
+		"kb:NVDA+control+;": "getLast",
 	}
