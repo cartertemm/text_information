@@ -10,6 +10,7 @@ Currently, the following features are supported:
 * IP address information. Includes geolocation, ISP, VPN/tor exit node and cellular network identification.
 * english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of [Dictionary API](https://github.com/cartertemm/dictionary-api), [web version here](https://dictionary.ctemm.me/)
 * ISBN lookups via the google books API
+* URL information. Fetches the page title, meta description, content length, and final domain (if the URL redirects to a different one) before you visit a site.
 * credit card type verification (Mastercard, Visa, Discover, Amex, etc)
 
 The add-on implements support for identifying phone numbers and email addresses as well, though no actual information is obtained. This is apt to change as soon as I can find something to do with them, and a straightforward API that meets our specifications.
