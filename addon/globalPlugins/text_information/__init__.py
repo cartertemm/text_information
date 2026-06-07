@@ -3,8 +3,8 @@
 
 #In python 3, urllib has been reorganized
 #import urllib
-from urllib.request import urlopen
-from urllib.parse import urlencode
+from urllib.request import urlopen, Request
+from urllib.parse import urlencode, urlparse
 #it might be nice to provide more log output
 #from logHandler import log
 import json
@@ -26,6 +26,18 @@ import isbn
 from bs4 import BeautifulSoup
 sys.path.remove(sys.path[-1])
 
+#taken and partially modified from http://code.activestate.com/recipes/578019
+def bytes2human(n):
+	symbols = ('KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB')
+	prefix = {}
+	for i, s in enumerate(symbols):
+		prefix[s] = 1 << (i + 1) * 10
+	for s in reversed(symbols):
+		if n >= prefix[s]:
+			value = float(n) / prefix[s]
+			return '%.1f%s' % (value, s)
+	return "%sB" % n
+
 last=""
 IPV4=re.compile(r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")
 IPV6 = re.compile(r"^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$")
@@ -39,6 +51,15 @@ credit_cards={
 	"JCB":re.compile(r"^(?:2131|1800|35\d{3})\d{11}$")
 }
 email=re.compile(r"^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$")
+url = re.compile(
+	r"^(https?://)?([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}(/[^\s]*)?$"
+)
+URL_MAX_BYTES = 32768
+CHROME_UA = (
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+	"AppleWebKit/537.36 (KHTML, like Gecko) "
+	"Chrome/125.0.0.0 Safari/537.36"
+)
 
 def is_match(obj, match):
 	return bool(obj.search(match))
@@ -62,6 +83,9 @@ def is_card(number):
 
 def is_isbn(text):
 	return isbn.isValid(str(text))
+
+def is_url(text):
+	return is_match(url, text)
 
 def get(addr):
 	#translators: error
@@ -145,6 +169,61 @@ def get_word_info(word):
 	ui.message(response)
 	last=response
 
+def get_url_info(addr):
+	global last
+	error=_("error")
+	if not addr.startswith(("http://", "https://")):
+		addr="https://"+addr
+	original_domain=urlparse(addr).netloc
+	try:
+		req=Request(addr, headers={
+			"User-Agent": CHROME_UA,
+			"Accept-Encoding": "identity",
+		})
+		response=urlopen(req, timeout=10)
+		data=response.read(URL_MAX_BYTES)
+	except IOError as i:
+		tones.beep(150, 200)
+		if str(i).find("Errno 11001") > -1 or str(i).find("Errno 10060") > -1:
+			ui.message(_("error making connection"))
+		elif str(i).find("Errno 10061") > -1:
+			ui.message(_("error, connection refused by target"))
+		else:
+			ui.message(error+": "+str(i))
+		return
+	except Exception as i:
+		tones.beep(150, 200)
+		ui.message(error+": "+str(i))
+		return
+	soup=BeautifulSoup(data, "html.parser")
+	title=soup.title.string.strip() if soup.title and soup.title.string else None
+	if not title:
+		tones.beep(150, 200)
+		# translators: message spoken when the page title cannot be retrieved
+		ui.message(_("unable to retrieve page title"))
+		return
+	fields=[]
+	fields.append(_("title")+": "+title)
+	desc_tag=soup.find("meta", attrs={"name": "description"})
+	if desc_tag:
+		desc=desc_tag.get("content", "").strip()
+		if desc:
+			# translators: label for the page description field in URL output
+			fields.append(_("description")+": "+desc)
+	content_length=response.headers.get("Content-Length")
+	if content_length:
+		try:
+			# translators: label for the content length field in URL output
+			fields.append(_("content length")+": "+bytes2human(int(content_length)))
+		except ValueError:
+			pass
+	final_domain=urlparse(response.geturl()).netloc
+	if final_domain and final_domain != original_domain:
+		# translators: label spoken when a URL redirects to a different domain
+		fields.append(_("redirects to")+": "+final_domain)
+	tones.beep(300, 200)
+	last=". ".join(fields)
+	ui.message(last)
 
 def word_count(string):
 	if not string: return 0
@@ -232,6 +311,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			#translators: message spoken after text is selected that contains an ISBN
 			final+=_("isbn: retrieving information...")
 			threading.Thread(target=get_book_info,args=(text,)).start()
+		elif is_url(text):
+			#translators: message spoken after selecting text that contains a URL
+			final+=_("URL, retrieving page information...")
+			threading.Thread(target=get_url_info,args=(text,)).start()
 		elif w==1:
 			#translators: message spoken after selecting text that contains a word (will be defined)
 			final+=_("retrieving word information...")
