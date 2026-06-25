@@ -199,9 +199,9 @@ def get_ip_info(ip):
 			+ ": "
 			+ response["isp"]
 		)
-		if response["mobile"] == True:
+		if response["mobile"]:
 			last += ". " + _("mobile connection")
-		if response["proxy"] == True:
+		if response["proxy"]:
 			last += ". " + _("Proxy, VPN or Tor exit address")
 		ui.message(last)
 
@@ -354,7 +354,6 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	script_getClipInfo.__doc__ = _("speaks information of text on the clipboard")
 
 	def script_getInfo(self, gesture):
-		text = ""
 		obj = api.getFocusObject()
 		treeInterceptor = obj.treeInterceptor
 		if isinstance(treeInterceptor, treeInterceptorHandler.DocumentTreeInterceptor):
