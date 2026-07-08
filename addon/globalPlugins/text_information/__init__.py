@@ -4,7 +4,8 @@
 # In python 3, urllib has been reorganized
 # import urllib
 from urllib.request import urlopen, Request
-from urllib.parse import urlencode, urlparse
+from urllib.parse import urlencode, urlparse, quote
+from urllib.error import HTTPError, URLError
 
 # it might be nice to provide more log output
 # from logHandler import log
@@ -249,19 +250,96 @@ def get_book_info(isbn):
 		ui.message(last)
 
 
+def fetch_word_entry(word):
+	# translators: error
+	error = _("error")
+	try:
+		req = Request(
+			"https://api.dictionaryapi.dev/api/v2/entries/en/" + quote(word),
+			headers={"User-Agent": CHROME_UA},
+		)
+		response = urlopen(req, timeout=10).read()
+	except HTTPError as h:
+		tones.beep(150, 200)
+		if h.code == 404:
+			# translators: The message spoken when a word was not found.
+			ui.message(_("unable to find definition for word"))
+		else:
+			ui.message(error + ": " + str(h))
+		return None
+	except URLError as u:
+		tones.beep(150, 200)
+		# translators: message spoken when we can't connect (error with connection)
+		error_connection = _("error making connection")
+		if str(u).find("Errno 11001") > -1 or str(u).find("Errno 10060") > -1:
+			ui.message(error_connection)
+		elif str(u).find("Errno 10061") > -1:
+			# translators: message spoken when the connection is refused by our target
+			ui.message(_("error, connection refused by target"))
+		else:
+			ui.message(error + ": " + str(u))
+		return None
+	except Exception as e:
+		tones.beep(150, 200)
+		ui.message(error + ": " + str(e))
+		return None
+	return json.loads(response)[0]
+
+
+def get_entry_phonetic(entry):
+	phonetic = entry.get("phonetic")
+	if phonetic:
+		return phonetic
+	for p in entry.get("phonetics", []):
+		if p.get("text"):
+			return p["text"]
+	return None
+
+
+def format_word_definition(definition, index):
+	text = str(index) + ". " + definition["definition"]
+	if definition.get("example"):
+		# translators: label for an example sentence using a word
+		text += ". " + _("example") + ": " + definition["example"]
+	if definition.get("synonyms"):
+		# translators: label for a list of synonyms
+		text += ". " + _("synonyms") + ": " + ", ".join(definition["synonyms"])
+	if definition.get("antonyms"):
+		# translators: label for a list of antonyms
+		text += ". " + _("antonyms") + ": " + ", ".join(definition["antonyms"])
+	return text
+
+
+def format_word_meaning(meaning):
+	definitions = [
+		format_word_definition(definition, index)
+		for index, definition in enumerate(meaning.get("definitions", []), 1)
+	]
+	if meaning.get("synonyms"):
+		definitions.append(_("synonyms") + ": " + ", ".join(meaning["synonyms"]))
+	if meaning.get("antonyms"):
+		definitions.append(_("antonyms") + ": " + ", ".join(meaning["antonyms"]))
+	return meaning["partOfSpeech"] + ": " + " ".join(definitions)
+
+
 def get_word_info(word):
 	global last
-	# parsing logic based on that seen in pydictionary
-	response = get("https://dictionary.ctemm.me/api/word/plain/" + word)
-	if not response:
+	entry = fetch_word_entry(word)
+	if entry is None:
+		return
+	fields = []
+	phonetic = get_entry_phonetic(entry)
+	if phonetic:
+		# translators: label for the phonetic pronunciation of a word
+		fields.append(_("pronunciation") + ": " + phonetic)
+	fields.extend(format_word_meaning(meaning) for meaning in entry.get("meanings", []))
+	if not fields:
 		tones.beep(150, 200)
-		# translators: The message spoken when a word was not found.
 		ui.message(_("unable to find definition for word"))
 		return
-	response = response.decode()
 	tones.beep(300, 200)
-	ui.message(response)
-	last = response
+	last = ". ".join(fields)
+	ui.message(last)
 
 
 def get_url_info(addr, timeout=10):

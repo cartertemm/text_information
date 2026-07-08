@@ -8,7 +8,7 @@ Con una sola tecla, puede darte el significado de una palabra, geolocalizar una 
 Actualmente, se admiten las siguientes funciones:
 
 * Información sobre direcciones IP. Incluye geolocalización, ISP, identificación de nodos de salida VPN/Tor y redes móviles.
-* Definiciones del diccionario en inglés, categoría gramatical, oraciones de ejemplo, sinónimos, antónimos, etc. Cortesía de [Dictionary API](https://github.com/cartertemm/dictionary-api), [versión web aquí](https://dictionary.ctemm.me/)
+* Definiciones del diccionario en inglés, categoría gramatical, oraciones de ejemplo, sinónimos, antónimos, etc. Cortesía de la [Free Dictionary API](https://dictionaryapi.dev/)
 * Búsquedas por ISBN a través de la API de Google Books
 * Verificación del tipo de tarjeta de crédito (Mastercard, Visa, Discover, Amex, etc.)
 

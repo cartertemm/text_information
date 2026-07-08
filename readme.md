@@ -8,7 +8,7 @@ With a single keypress, it can give you the meaning of a word, geolocate an IP a
 Currently, the following features are supported:
 
 * IP address information. Includes geolocation, ISP, VPN/tor exit node and cellular network identification.
-* english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of [Dictionary API](https://github.com/cartertemm/dictionary-api), [web version here](https://dictionary.ctemm.me/)
+* english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of the [Free Dictionary API](https://dictionaryapi.dev/)
 * ISBN lookups via the google books API
 * URL information. Fetches the page title, meta description, content length, and final domain (if the URL redirects to a different one) before you visit a site.
 * credit card type verification (Mastercard, Visa, Discover, Amex, etc)

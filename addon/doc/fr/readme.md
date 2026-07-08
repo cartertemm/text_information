@@ -8,7 +8,7 @@ En un seul appui de touche, elle peut vous donner la définition d'un mot, géol
 Actuellement, les fonctionnalités suivantes sont prises en charge :
 
 * Informations sur les adresses IP. Comprend la géolocalisation, le FAI, l'identification des nœuds de sortie VPN/Tor et des réseaux cellulaires.
-* Définitions de dictionnaire anglais, catégorie grammaticale, exemples de phrases, synonymes, antonymes, etc. Avec l'aimable contribution de [Dictionary API](https://github.com/cartertemm/dictionary-api), [version web ici](https://dictionary.ctemm.me/)
+* Définitions de dictionnaire anglais, catégorie grammaticale, exemples de phrases, synonymes, antonymes, etc. Avec l'aimable contribution de la [Free Dictionary API](https://dictionaryapi.dev/)
 * Recherche ISBN via l'API Google Books
 * Vérification du type de carte bancaire (Mastercard, Visa, Discover, Amex, etc.)
 
