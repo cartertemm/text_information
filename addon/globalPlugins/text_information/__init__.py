@@ -7,8 +7,7 @@ from urllib.request import urlopen, Request
 from urllib.parse import urlencode, urlparse, quote
 from urllib.error import HTTPError, URLError
 
-# it might be nice to provide more log output
-# from logHandler import log
+from logHandler import log
 import json
 import ui
 import api
@@ -24,6 +23,10 @@ import globalPluginHandler
 import re
 import sys
 import os
+import ctypes
+import tempfile
+import wx
+import gui
 
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 import isbn
@@ -46,6 +49,10 @@ def bytes2human(n):
 
 
 last = ""
+# (label, url) pairs for pronunciation audio available for the word in `last`
+lastAudio = []
+# the word `last`/`lastAudio` refer to, when the lookup was a word definition
+lastWord = ""
 IPV4 = re.compile(
 	r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 )
@@ -120,6 +127,7 @@ def get(addr, timeout=10):
 	try:
 		response = urlopen(addr, timeout=timeout).read()
 	except IOError as i:
+		log.error(f"IOError fetching {addr}: {i}")
 		# translators: message spoken when we can't connect (error with connection)
 		error_connection = _("error making connection")
 		if str(i).find("Errno 11001") > -1:
@@ -140,6 +148,7 @@ def get(addr, timeout=10):
 			ui.message(error + ": " + str(i))
 			return
 	except Exception as i:
+		log.error(f"Unexpected error fetching {addr}: {i}", exc_info=True)
 		tones.beep(150, 200)
 		ui.message(error + ": " + str(i))
 		return
@@ -147,7 +156,7 @@ def get(addr, timeout=10):
 
 
 def get_ip_info(ip):
-	global last
+	global last, lastAudio
 	response = get(
 		"http://ip-api.com/json/"
 		+ ip
@@ -167,6 +176,7 @@ def get_ip_info(ip):
 		ui.message(_("error obtaining IP info ") + response["message"])
 	else:
 		tones.beep(300, 200)
+		lastAudio = []
 		last = (
 			_("country")
 			+ ": "
@@ -208,7 +218,7 @@ def get_ip_info(ip):
 
 
 def get_book_info(isbn):
-	global last
+	global last, lastAudio
 	isbn = isbn.replace(" ", "")
 	isbn = isbn.replace("-", "")
 	response = get("https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn)
@@ -221,6 +231,7 @@ def get_book_info(isbn):
 		ui.message(_("no book with that ISBN found"))
 	else:
 		tones.beep(300, 200)
+		lastAudio = []
 		info = response["items"][0]["volumeInfo"]
 		last = (
 			_("title")
@@ -260,14 +271,18 @@ def fetch_word_entry(word):
 		)
 		response = urlopen(req, timeout=10).read()
 	except HTTPError as h:
-		tones.beep(150, 200)
 		if h.code == 404:
+			log.debug(f"No dictionary entry for word: {word}")
+			tones.beep(150, 200)
 			# translators: The message spoken when a word was not found.
 			ui.message(_("unable to find definition for word"))
 		else:
+			log.error(f"HTTPError fetching definition for {word!r}: {h}")
+			tones.beep(150, 200)
 			ui.message(error + ": " + str(h))
 		return None
 	except URLError as u:
+		log.error(f"URLError fetching definition for {word!r}: {u}")
 		tones.beep(150, 200)
 		# translators: message spoken when we can't connect (error with connection)
 		error_connection = _("error making connection")
@@ -280,6 +295,7 @@ def fetch_word_entry(word):
 			ui.message(error + ": " + str(u))
 		return None
 	except Exception as e:
+		log.error(f"Unexpected error fetching definition for {word!r}: {e}", exc_info=True)
 		tones.beep(150, 200)
 		ui.message(error + ": " + str(e))
 		return None
@@ -294,6 +310,43 @@ def get_entry_phonetic(entry):
 		if p.get("text"):
 			return p["text"]
 	return None
+
+
+# dictionaryapi.dev audio filenames end in a run of hyphen-joined 2-letter locale
+# codes (e.g. "hello-uk.mp3", "data-ie-uk-us.mp3"); a leading sense number like the
+# "1" in "read-1-uk.mp3" is not a locale code and is left out of the label.
+AUDIO_LOCALE_TOKEN_RE = re.compile(r"^[a-z]{2}$")
+
+
+def get_audio_label(audioUrl, phoneticText, usedLabels):
+	stem = audioUrl.rsplit("/", 1)[-1].rsplit(".", 1)[0]
+	tokens = stem.split("-")
+	localeTokens = []
+	while tokens and AUDIO_LOCALE_TOKEN_RE.match(tokens[-1]):
+		localeTokens.insert(0, tokens.pop())
+	# translators: fallback label for a pronunciation audio button when no locale
+	# or phonetic transcription could be determined for it
+	label = "/".join(t.upper() for t in localeTokens) if localeTokens else phoneticText or _("pronunciation")
+	if label in usedLabels:
+		usedLabels[label] += 1
+		label = "{0} ({1})".format(label, usedLabels[label])
+	else:
+		usedLabels[label] = 1
+	return label
+
+
+def get_entry_audio(entry):
+	seenUrls = set()
+	usedLabels = {}
+	audio = []
+	for p in entry.get("phonetics", []):
+		audioUrl = p.get("audio")
+		# MCI ("type mpegvideo") only reliably decodes mp3; skip other formats (eg. ogg)
+		if not audioUrl or not audioUrl.lower().endswith(".mp3") or audioUrl in seenUrls:
+			continue
+		seenUrls.add(audioUrl)
+		audio.append((get_audio_label(audioUrl, p.get("text"), usedLabels), audioUrl))
+	return audio
 
 
 def format_word_definition(definition, index):
@@ -323,7 +376,7 @@ def format_word_meaning(meaning):
 
 
 def get_word_info(word):
-	global last
+	global last, lastAudio, lastWord
 	entry = fetch_word_entry(word)
 	if entry is None:
 		return
@@ -338,6 +391,8 @@ def get_word_info(word):
 		ui.message(_("unable to find definition for word"))
 		return
 	tones.beep(300, 200)
+	lastAudio = get_entry_audio(entry)
+	lastWord = word
 	last = ". ".join(fields)
 	ui.message(last)
 
@@ -345,7 +400,7 @@ def get_word_info(word):
 def get_url_info(addr, timeout=10):
 	# We violate DRY and implement parts of `get()` here, because we have to retrieve the headers and set a common user agent
 	# Ugly, but passable under the circumstances
-	global last
+	global last, lastAudio
 	error = _("error")
 	if not addr.startswith(("http://", "https://")):
 		addr = "https://" + addr
@@ -361,6 +416,7 @@ def get_url_info(addr, timeout=10):
 		response = urlopen(req, timeout=timeout)
 		data = response.read(URL_MAX_BYTES)
 	except IOError as i:
+		log.error(f"IOError fetching URL {addr!r}: {i}")
 		tones.beep(150, 200)
 		if str(i).find("Errno 11001") > -1 or str(i).find("Errno 10060") > -1:
 			ui.message(_("error making connection"))
@@ -370,6 +426,7 @@ def get_url_info(addr, timeout=10):
 			ui.message(error + ": " + str(i))
 		return
 	except Exception as i:
+		log.error(f"Unexpected error fetching URL {addr!r}: {i}", exc_info=True)
 		tones.beep(150, 200)
 		ui.message(error + ": " + str(i))
 		return
@@ -394,12 +451,13 @@ def get_url_info(addr, timeout=10):
 			# translators: label for the content length field in URL output
 			fields.append(_("content length") + ": " + bytes2human(int(content_length)))
 		except ValueError:
-			pass
+			log.debug(f"Non-numeric Content-Length header for {addr!r}: {content_length!r}")
 	final_domain = urlparse(response.geturl()).netloc
 	if final_domain and final_domain != original_domain:
 		# translators: label spoken when a URL redirects to a different domain
 		fields.append(_("redirects to") + ": " + final_domain)
 	tones.beep(300, 200)
+	lastAudio = []
 	last = ". ".join(fields)
 	ui.message(last)
 
@@ -408,6 +466,72 @@ def word_count(string):
 	if not string:
 		return 0
 	return len(string.split())
+
+
+_audioPlaybackLock = threading.Lock()
+AUDIO_MCI_ALIAS = "textInformationPronunciation"
+
+
+def play_audio_url(audioUrl):
+	try:
+		req = Request(audioUrl, headers={"User-Agent": CHROME_UA})
+		data = urlopen(req, timeout=10).read()
+	except Exception as e:
+		log.error(f"Error downloading pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
+		tones.beep(150, 200)
+		return
+	tempPath = os.path.join(tempfile.gettempdir(), "text_information_pronunciation.mp3")
+	with _audioPlaybackLock:
+		try:
+			winmm = ctypes.windll.winmm
+			# close any previous playback first, otherwise it still holds tempPath open and the write below fails
+			winmm.mciSendStringW("close " + AUDIO_MCI_ALIAS, None, 0, None)
+			with open(tempPath, "wb") as f:
+				f.write(data)
+			winmm.mciSendStringW(
+				'open "{0}" type mpegvideo alias {1}'.format(tempPath, AUDIO_MCI_ALIAS), None, 0, None
+			)
+			winmm.mciSendStringW("play " + AUDIO_MCI_ALIAS, None, 0, None)
+		except Exception as e:
+			log.error(f"Error playing pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
+			tones.beep(150, 200)
+
+
+def make_audio_button_handler(audioUrl):
+	def handler(event):
+		threading.Thread(target=play_audio_url, args=(audioUrl,), daemon=True).start()
+
+	return handler
+
+
+class WordAudioDialog(wx.Dialog):
+	def __init__(self, parent, title, message, audioEntries):
+		super().__init__(parent, title=title, style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER)
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		textCtrl = wx.TextCtrl(self, value=message, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH)
+		sizer.Add(textCtrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+		for label, audioUrl in audioEntries:
+			# translators: label for a button that plays a pronunciation audio clip, {0} is the locale/variant
+			button = wx.Button(self, label=_("Play {0}").format(label))
+			button.Bind(wx.EVT_BUTTON, make_audio_button_handler(audioUrl))
+			sizer.Add(button, flag=wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, border=5)
+		closeButton = wx.Button(self, wx.ID_CLOSE)
+		closeButton.Bind(wx.EVT_BUTTON, lambda evt: self.Close())
+		sizer.Add(closeButton, flag=wx.ALIGN_RIGHT | wx.ALL, border=5)
+		self.SetSizer(sizer)
+		self.SetSize((500, 400))
+		self.Bind(wx.EVT_CLOSE, self.onClose)
+		textCtrl.SetFocus()
+
+	def onClose(self, event):
+		gui.mainFrame.postPopup()
+		self.Destroy()
+
+
+def show_audio_browseable_message(message, title, audioEntries):
+	dialog = WordAudioDialog(gui.mainFrame, title, message, audioEntries)
+	gui.mainFrame.prePopup()
+	dialog.Show()
 
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
@@ -420,7 +544,8 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 	def script_getClipInfo(self, gesture):
 		try:
 			text = api.getClipData()
-		except TypeError:
+		except TypeError as e:
+			log.debug(f"Unable to get clipboard data: {e}")
 			text = None
 		if not text or not isinstance(text, str):
 			# translators: message spoken when the clipboard is empty
@@ -438,14 +563,16 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			obj = treeInterceptor
 		try:
 			info = obj.makeTextInfo(textInfos.POSITION_SELECTION)
-		except (RuntimeError, NotImplementedError):
+		except (RuntimeError, NotImplementedError) as e:
+			log.debug(f"makeTextInfo failed on {obj!r}: {e}")
 			info = None
 		if not info or info.isCollapsed:
 			# No text selected, try grabbing word under review cursor
 			info = api.getReviewPosition().copy()
 			try:
 				info.expand(textInfos.UNIT_WORD)
-			except AttributeError:  # Nothing more we can do
+			except AttributeError as e:  # Nothing more we can do
+				log.debug(f"Unable to expand review position to word: {e}")
 				# translators: message spoken when no text is selected or focused
 				ui.message(_("select or focus something first"))
 				return
@@ -460,7 +587,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			if r == 0:
 				ui.message(last)
 			elif r == 1:
-				ui.browseableMessage("\n".join(last.split(". ")), "text information")
+				if lastAudio:
+					# translators: title of the dialog showing a word's definition and pronunciation audio buttons
+					title = _("Definition for {0}").format(lastWord)
+					show_audio_browseable_message("\n".join(last.split(". ")), title, lastAudio)
+				else:
+					ui.browseableMessage("\n".join(last.split(". ")), "text information")
 		else:
 			# translators: message spoken when the user tries getting previous information but there is none
 			ui.message(_("you haven't yet gotten info"))
