@@ -25,6 +25,7 @@ import sys
 import os
 import ctypes
 import tempfile
+import queue
 import wx
 import gui
 
@@ -468,38 +469,61 @@ def word_count(string):
 	return len(string.split())
 
 
-_audioPlaybackLock = threading.Lock()
-AUDIO_MCI_ALIAS = "textInformationPronunciation"
+# The MCI "mpegvideo" driver ties a device's teardown to the thread that opened it, so all
+# open/play/close calls must happen from one persistent thread. A new thread per play would leave
+# the previous device orphaned on a dead thread, permanently locking its temp file.
+AUDIO_MCI_ALIAS = "textInformationAudioPlayer"
+_audioQueue = queue.Queue()
 
 
-def play_audio_url(audioUrl):
-	try:
-		req = Request(audioUrl, headers={"User-Agent": CHROME_UA})
-		data = urlopen(req, timeout=10).read()
-	except Exception as e:
-		log.error(f"Error downloading pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
-		tones.beep(150, 200)
-		return
-	tempPath = os.path.join(tempfile.gettempdir(), "text_information_pronunciation.mp3")
-	with _audioPlaybackLock:
-		try:
-			winmm = ctypes.windll.winmm
-			# close any previous playback first, otherwise it still holds tempPath open and the write below fails
+def _audio_worker():
+	winmm = ctypes.windll.winmm
+	previousTempPath = None
+	counter = 0
+	while True:
+		audioUrl = _audioQueue.get()
+		if audioUrl is None:
 			winmm.mciSendStringW("close " + AUDIO_MCI_ALIAS, None, 0, None)
+			return
+		try:
+			req = Request(audioUrl, headers={"User-Agent": CHROME_UA})
+			data = urlopen(req, timeout=10).read()
+		except Exception as e:
+			log.error(f"Error downloading pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
+			tones.beep(150, 200)
+			continue
+		winmm.mciSendStringW("close " + AUDIO_MCI_ALIAS, None, 0, None)
+		if previousTempPath:
+			try:
+				os.remove(previousTempPath)
+			except OSError as e:
+				log.debug(f"Unable to remove old pronunciation temp file {previousTempPath!r}: {e}")
+		counter += 1
+		tempPath = os.path.join(tempfile.gettempdir(), "text_information_pronunciation_{0}.mp3".format(counter))
+		try:
 			with open(tempPath, "wb") as f:
 				f.write(data)
 			winmm.mciSendStringW(
 				'open "{0}" type mpegvideo alias {1}'.format(tempPath, AUDIO_MCI_ALIAS), None, 0, None
 			)
 			winmm.mciSendStringW("play " + AUDIO_MCI_ALIAS, None, 0, None)
+			previousTempPath = tempPath
 		except Exception as e:
 			log.error(f"Error playing pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
 			tones.beep(150, 200)
 
 
+_audioThread = threading.Thread(target=_audio_worker, daemon=True)
+_audioThread.start()
+
+
+def play_audio_url(audioUrl):
+	_audioQueue.put(audioUrl)
+
+
 def make_audio_button_handler(audioUrl):
 	def handler(event):
-		threading.Thread(target=play_audio_url, args=(audioUrl,), daemon=True).start()
+		play_audio_url(audioUrl)
 
 	return handler
 
@@ -540,6 +564,10 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
 	def __init__(self, *args, **kwargs):
 		super(GlobalPlugin, self).__init__(*args, **kwargs)
+
+	def terminate(self, *args, **kwargs):
+		_audioQueue.put(None)
+		super(GlobalPlugin, self).terminate(*args, **kwargs)
 
 	def script_getClipInfo(self, gesture):
 		try:
