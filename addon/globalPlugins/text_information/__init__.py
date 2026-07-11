@@ -26,6 +26,7 @@ import os
 import ctypes
 import tempfile
 import queue
+import glob
 import wx
 import gui
 
@@ -473,18 +474,31 @@ def word_count(string):
 # open/play/close calls must happen from one persistent thread. A new thread per play would leave
 # the previous device orphaned on a dead thread, permanently locking its temp file.
 AUDIO_MCI_ALIAS = "textInformationAudioPlayer"
+AUDIO_TEMP_FILE_GLOB = os.path.join(tempfile.gettempdir(), "text_information_pronunciation*.mp3")
 _audioQueue = queue.Queue()
+# sentinel telling the worker to stop playback and clean up, without shutting the thread down
+_AUDIO_STOP = object()
+
+
+def _remove_audio_temp_files():
+	for path in glob.glob(AUDIO_TEMP_FILE_GLOB):
+		try:
+			os.remove(path)
+		except OSError as e:
+			log.debug(f"Unable to remove pronunciation temp file {path!r}: {e}")
 
 
 def _audio_worker():
 	winmm = ctypes.windll.winmm
-	previousTempPath = None
 	counter = 0
 	while True:
 		audioUrl = _audioQueue.get()
-		if audioUrl is None:
+		if audioUrl is None or audioUrl is _AUDIO_STOP:
 			winmm.mciSendStringW("close " + AUDIO_MCI_ALIAS, None, 0, None)
-			return
+			_remove_audio_temp_files()
+			if audioUrl is None:
+				return
+			continue
 		try:
 			req = Request(audioUrl, headers={"User-Agent": CHROME_UA})
 			data = urlopen(req, timeout=10).read()
@@ -493,11 +507,7 @@ def _audio_worker():
 			tones.beep(150, 200)
 			continue
 		winmm.mciSendStringW("close " + AUDIO_MCI_ALIAS, None, 0, None)
-		if previousTempPath:
-			try:
-				os.remove(previousTempPath)
-			except OSError as e:
-				log.debug(f"Unable to remove old pronunciation temp file {previousTempPath!r}: {e}")
+		_remove_audio_temp_files()
 		counter += 1
 		tempPath = os.path.join(tempfile.gettempdir(), "text_information_pronunciation_{0}.mp3".format(counter))
 		try:
@@ -507,7 +517,6 @@ def _audio_worker():
 				'open "{0}" type mpegvideo alias {1}'.format(tempPath, AUDIO_MCI_ALIAS), None, 0, None
 			)
 			winmm.mciSendStringW("play " + AUDIO_MCI_ALIAS, None, 0, None)
-			previousTempPath = tempPath
 		except Exception as e:
 			log.error(f"Error playing pronunciation audio from {audioUrl!r}: {e}", exc_info=True)
 			tones.beep(150, 200)
@@ -519,6 +528,10 @@ _audioThread.start()
 
 def play_audio_url(audioUrl):
 	_audioQueue.put(audioUrl)
+
+
+def stop_audio_playback():
+	_audioQueue.put(_AUDIO_STOP)
 
 
 def make_audio_button_handler(audioUrl):
@@ -549,6 +562,7 @@ class WordAudioDialog(wx.Dialog):
 		textCtrl.SetFocus()
 
 	def onClose(self, event):
+		stop_audio_playback()
 		gui.mainFrame.postPopup()
 		self.Destroy()
 
