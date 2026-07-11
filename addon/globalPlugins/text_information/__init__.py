@@ -544,6 +544,7 @@ class WordAudioDialog(wx.Dialog):
 		sizer.Add(closeButton, flag=wx.ALIGN_RIGHT | wx.ALL, border=5)
 		self.SetSizer(sizer)
 		self.SetSize((500, 400))
+		self.SetEscapeId(wx.ID_CLOSE)
 		self.Bind(wx.EVT_CLOSE, self.onClose)
 		textCtrl.SetFocus()
 
