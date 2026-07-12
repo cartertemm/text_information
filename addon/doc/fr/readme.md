@@ -8,7 +8,7 @@ En un seul appui de touche, elle peut vous donner la définition d'un mot, géol
 Actuellement, les fonctionnalités suivantes sont prises en charge :
 
 * Informations sur les adresses IP. Comprend la géolocalisation, le FAI, l'identification des nœuds de sortie VPN/Tor et des réseaux cellulaires.
-* Définitions de dictionnaire anglais, catégorie grammaticale, exemples de phrases, synonymes, antonymes, etc. Avec l'aimable contribution de la [Free Dictionary API](https://dictionaryapi.dev/)
+* Définitions de dictionnaire anglais, catégorie grammaticale, exemples de phrases, synonymes, antonymes, etc. Avec l'aimable contribution de la [Free Dictionary API](https://dictionaryapi.dev/). Lorsque vous affichez la définition d'un mot dans une boîte de dialogue navigable, des boutons sont inclus pour écouter sa prononciation, lorsque l'audio est disponible
 * Recherche ISBN via l'API Google Books
 * Vérification du type de carte bancaire (Mastercard, Visa, Discover, Amex, etc.)
 
@@ -22,7 +22,7 @@ Remarque : ces raccourcis supposent un clavier en disposition anglaise et peuven
 
 * NVDA+; (point-virgule) : fournit des informations basées sur le texte sélectionné
 * NVDA+MAJ+; (point-virgule) : fournit des informations sur le texte dans le presse-papiers
-* NVDA+contrôle+; (point-virgule) : énonce la dernière information rapportée. Appuyez deux fois rapidement pour l'afficher dans une boîte de dialogue navigable.
+* NVDA+contrôle+; (point-virgule) : énonce la dernière information rapportée. Appuyez deux fois rapidement pour l'afficher dans une boîte de dialogue navigable. Pour les définitions de mots, cette boîte de dialogue inclut également des boutons pour lire l'audio de prononciation, lorsqu'il est disponible. Échap ferme la boîte de dialogue.
 
 ## Note concernant Python 3
 

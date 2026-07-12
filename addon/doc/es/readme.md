@@ -8,7 +8,7 @@ Con una sola tecla, puede darte el significado de una palabra, geolocalizar una 
 Actualmente, se admiten las siguientes funciones:
 
 * Información sobre direcciones IP. Incluye geolocalización, ISP, identificación de nodos de salida VPN/Tor y redes móviles.
-* Definiciones del diccionario en inglés, categoría gramatical, oraciones de ejemplo, sinónimos, antónimos, etc. Cortesía de la [Free Dictionary API](https://dictionaryapi.dev/)
+* Definiciones del diccionario en inglés, categoría gramatical, oraciones de ejemplo, sinónimos, antónimos, etc. Cortesía de la [Free Dictionary API](https://dictionaryapi.dev/). Al mostrar la definición de una palabra en un diálogo navegable, se incluyen botones para escuchar su pronunciación, cuando el audio esté disponible
 * Búsquedas por ISBN a través de la API de Google Books
 * Verificación del tipo de tarjeta de crédito (Mastercard, Visa, Discover, Amex, etc.)
 
@@ -22,7 +22,7 @@ Nota: Estos atajos asumen un diseño de teclado en inglés y puede que no funcio
 
 * NVDA+; (punto y coma): proporciona información basada en el texto seleccionado
 * NVDA+SHIFT+; (punto y coma): proporciona información sobre el texto del portapapeles
-* NVDA+control+; (punto y coma): reproduce la última información reportada. Presiona dos veces rápidamente para verla en un diálogo navegable.
+* NVDA+control+; (punto y coma): reproduce la última información reportada. Presiona dos veces rápidamente para verla en un diálogo navegable. Para definiciones de palabras, este diálogo también incluye botones para reproducir el audio de pronunciación, cuando esté disponible. Escape cierra el diálogo.
 
 ## Nota sobre Python 3
 
