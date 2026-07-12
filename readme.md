@@ -8,7 +8,7 @@ With a single keypress, it can give you the meaning of a word, geolocate an IP a
 Currently, the following features are supported:
 
 * IP address information. Includes geolocation, ISP, VPN/tor exit node and cellular network identification.
-* english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of the [Free Dictionary API](https://dictionaryapi.dev/)
+* english dictionary definitions, part of speech, example sentences, synonyms, antonyms, etc. Courtesy of the [Free Dictionary API](https://dictionaryapi.dev/). When you bring up a word definition in a browsable dialog, buttons are included to hear its pronunciation, when audio is available
 * ISBN lookups via the google books API
 * URL information. Fetches the page title, meta description, content length, and final domain (if the URL redirects to a different one) before you visit a site.
 * credit card type verification (Mastercard, Visa, Discover, Amex, etc)
@@ -23,7 +23,7 @@ note: These bindings asume an English keyboard layout, and might not work otherw
 
 * NVDA+; (semicolon): provides information based on the text that's selected
 * NVDA+SHIFT+; (semicolon): provides information about text on the clipboard
-* NVDA+control+; (semicolon): speaks the last reported information. Press twice quickly to get it displayed in a browsable dialog.
+* NVDA+control+; (semicolon): speaks the last reported information. Press twice quickly to get it displayed in a browsable dialog. For word definitions, this dialog also includes buttons to play pronunciation audio, when available. Escape closes the dialog.
 
 ## A note regarding python 3
 
