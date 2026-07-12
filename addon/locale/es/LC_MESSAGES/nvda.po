@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: textInformation 1.5\n"
 "Report-Msgid-Bugs-To: nvda-translations@groups.io\n"
-"POT-Creation-Date: 2026-05-06 09:03-0700\n"
-"PO-Revision-Date: 2026-05-06 16:05+0000\n"
+"POT-Creation-Date: 2026-07-12 10:37-0700\n"
+"PO-Revision-Date: 2026-07-12 17:39+0000\n"
 "Last-Translator: Carter Temm <cartertemm@gmail.com>\n"
 "Language-Team: es <LL@li.org>\n"
 "Language: es\n"
@@ -18,6 +18,242 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: Babel 2.18.0\n"
+
+#. translators: error
+#: addon/globalPlugins/text_information/__init__.py:122
+#: addon/globalPlugins/text_information/__init__.py:286
+#: addon/globalPlugins/text_information/definitions.py:35
+msgid "error"
+msgstr "error"
+
+#. translators: message spoken when we can't connect (error with connection)
+#: addon/globalPlugins/text_information/__init__.py:128
+#: addon/globalPlugins/text_information/__init__.py:304
+#: addon/globalPlugins/text_information/definitions.py:57
+msgid "error making connection"
+msgstr "error de conexión"
+
+#. translators: message spoken when the connection is refused by our target
+#: addon/globalPlugins/text_information/__init__.py:140
+#: addon/globalPlugins/text_information/__init__.py:306
+#: addon/globalPlugins/text_information/definitions.py:62
+msgid "error, connection refused by target"
+msgstr "error, conexión rechazada por el destino"
+
+#. translators: message, followed by the error, spoken when the response
+#. returned contains an error
+#: addon/globalPlugins/text_information/__init__.py:172
+msgid "error obtaining IP info "
+msgstr "error al obtener información de IP "
+
+#: addon/globalPlugins/text_information/__init__.py:177
+msgid "country"
+msgstr "país"
+
+#: addon/globalPlugins/text_information/__init__.py:181
+msgid "region"
+msgstr "región"
+
+#: addon/globalPlugins/text_information/__init__.py:185
+msgid "city"
+msgstr "ciudad"
+
+#: addon/globalPlugins/text_information/__init__.py:189
+msgid "zipcode"
+msgstr "código postal"
+
+#: addon/globalPlugins/text_information/__init__.py:193
+msgid "longitude"
+msgstr "longitud"
+
+#: addon/globalPlugins/text_information/__init__.py:197
+msgid "latitude"
+msgstr "latitud"
+
+#: addon/globalPlugins/text_information/__init__.py:201
+msgid "timezone"
+msgstr "zona horaria"
+
+#: addon/globalPlugins/text_information/__init__.py:205
+msgid "ISP"
+msgstr "ISP"
+
+#: addon/globalPlugins/text_information/__init__.py:210
+msgid "mobile connection"
+msgstr "conexión móvil"
+
+#: addon/globalPlugins/text_information/__init__.py:212
+msgid "Proxy, VPN or Tor exit address"
+msgstr "dirección de salida de Proxy, VPN o Tor"
+
+#. translators: message spoken when we're unable to find a book with the given
+#. ISBN
+#: addon/globalPlugins/text_information/__init__.py:227
+msgid "no book with that ISBN found"
+msgstr "no se encontró ningún libro con ese ISBN"
+
+#: addon/globalPlugins/text_information/__init__.py:233
+#: addon/globalPlugins/text_information/__init__.py:323
+msgid "title"
+msgstr "título"
+
+#: addon/globalPlugins/text_information/__init__.py:237
+msgid "author (s)"
+msgstr "autor(es)"
+
+#: addon/globalPlugins/text_information/__init__.py:241
+msgid "language"
+msgstr "idioma"
+
+#. translators: label for the page description field in URL output
+#: addon/globalPlugins/text_information/__init__.py:245
+#: addon/globalPlugins/text_information/__init__.py:329
+msgid "description"
+msgstr "descripción"
+
+#: addon/globalPlugins/text_information/__init__.py:249
+msgid "maturity rating"
+msgstr "clasificación por edad"
+
+#: addon/globalPlugins/text_information/__init__.py:253
+msgid "published date"
+msgstr "fecha de publicación"
+
+#. translators: label for the phonetic pronunciation of a word
+#. translators: fallback label for a pronunciation audio button when no locale
+#. or phonetic transcription could be determined for it
+#: addon/globalPlugins/text_information/__init__.py:269
+#: addon/globalPlugins/text_information/definitions.py:98
+msgid "pronunciation"
+msgstr "pronunciación"
+
+#. translators: The message spoken when a word was not found.
+#: addon/globalPlugins/text_information/__init__.py:273
+#: addon/globalPlugins/text_information/definitions.py:47
+msgid "unable to find definition for word"
+msgstr "no se pudo encontrar la definición de la palabra"
+
+#. translators: message spoken when the page title cannot be retrieved
+#: addon/globalPlugins/text_information/__init__.py:320
+msgid "unable to retrieve page title"
+msgstr "no se pudo obtener el título de la página"
+
+#. translators: label for the content length field in URL output
+#: addon/globalPlugins/text_information/__init__.py:334
+msgid "content length"
+msgstr "longitud del contenido"
+
+#. translators: label spoken when a URL redirects to a different domain
+#: addon/globalPlugins/text_information/__init__.py:340
+msgid "redirects to"
+msgstr "redirige a"
+
+#: addon/globalPlugins/text_information/__init__.py:355
+msgid "Text Information"
+msgstr "Información de texto"
+
+#. translators: message spoken when the clipboard is empty
+#: addon/globalPlugins/text_information/__init__.py:372
+msgid "There is no text on the clipboard"
+msgstr "No hay texto en el portapapeles"
+
+#: addon/globalPlugins/text_information/__init__.py:377
+msgid "speaks information of text on the clipboard"
+msgstr "dice la información del texto en el portapapeles"
+
+#. translators: message spoken when no text is selected or focused
+#: addon/globalPlugins/text_information/__init__.py:397
+msgid "select or focus something first"
+msgstr "selecciona o enfoca algo primero"
+
+#: addon/globalPlugins/text_information/__init__.py:401
+msgid "speaks information for currently selected text"
+msgstr "dice la información del texto actualmente seleccionado"
+
+#. translators: title of the dialog showing a word's definition and
+#. pronunciation audio buttons
+#: addon/globalPlugins/text_information/__init__.py:412
+#, python-brace-format, fuzzy
+msgid "Definition for {0}"
+msgstr "Definición de {0}"
+
+#. translators: message spoken when the user tries getting previous
+#. information
+#. but there is none
+#: addon/globalPlugins/text_information/__init__.py:418
+msgid "you haven't yet gotten info"
+msgstr "aún no has obtenido información"
+
+#: addon/globalPlugins/text_information/__init__.py:421
+msgid "reports the last retrieved information in a browseable dialog"
+msgstr "informa la última información obtenida en un diálogo navegable"
+
+#. translators: credit card
+#: addon/globalPlugins/text_information/__init__.py:430
+msgid "credit card"
+msgstr "tarjeta de crédito"
+
+#. translators: message spoken after selecting text that contains an IP v4
+#. address
+#: addon/globalPlugins/text_information/__init__.py:434
+msgid " IPv4 address, retrieving information..."
+msgstr " dirección IPv4, obteniendo información..."
+
+#. translators: message spoken after selecting text that contains an IP v6
+#. address
+#: addon/globalPlugins/text_information/__init__.py:438
+msgid "IPv6 address, retrieving information..."
+msgstr "dirección IPv6, obteniendo información..."
+
+#. translators: phone number
+#: addon/globalPlugins/text_information/__init__.py:443
+msgid "phone number"
+msgstr "número de teléfono"
+
+#. translators: email
+#: addon/globalPlugins/text_information/__init__.py:446
+msgid "email"
+msgstr "correo electrónico"
+
+#. translators: message spoken after text is selected that contains an ISBN
+#: addon/globalPlugins/text_information/__init__.py:449
+msgid "isbn: retrieving information..."
+msgstr "isbn: obteniendo información..."
+
+#. translators: message spoken after selecting text that contains a URL
+#: addon/globalPlugins/text_information/__init__.py:454
+msgid "URL, retrieving page information..."
+msgstr "URL, obteniendo información de la página..."
+
+#. translators: message spoken after selecting text that contains a word (will
+#. be defined)
+#: addon/globalPlugins/text_information/__init__.py:458
+msgid "retrieving word information..."
+msgstr "obteniendo información de la palabra..."
+
+#. translators: label for an example sentence using a word
+#: addon/globalPlugins/text_information/definitions.py:126
+msgid "example"
+msgstr "ejemplo"
+
+#. translators: label for a list of synonyms
+#: addon/globalPlugins/text_information/definitions.py:129
+#: addon/globalPlugins/text_information/definitions.py:142
+msgid "synonyms"
+msgstr "sinónimos"
+
+#. translators: label for a list of antonyms
+#: addon/globalPlugins/text_information/definitions.py:132
+#: addon/globalPlugins/text_information/definitions.py:144
+msgid "antonyms"
+msgstr "antónimos"
+
+#. translators: label for a button that plays a pronunciation audio clip, {0}
+#. is the locale/variant
+#: addon/globalPlugins/text_information/definitions.py:229
+#, python-brace-format, fuzzy
+msgid "Play {0}"
+msgstr "Reproducir {0}"
 
 #. Add-on summary, usually the user visible name of the addon.
 #. Translators: Summary for this add-on to be shown on installation and add-on
@@ -32,8 +268,8 @@ msgstr "información de texto"
 #: buildVars.py:20
 msgid ""
 "Provides information like dictionary definitions for selected text. Press "
-"NVDA+; (semicolon) to activate, NVDA + shift + ; to get information from the "
-"clipboard, and NVDA + control + ; to speak the last retrieved information. "
+"NVDA+; (semicolon) to activate, NVDA + shift + ; to get information from the"
+" clipboard, and NVDA + control + ; to speak the last retrieved information. "
 "You can press this twice quickly to have it displayed in a browseable "
 "dialog. Note: for non-english keyboard layouts these gestures might need to "
 "be redefined in the input gestures dialog."
