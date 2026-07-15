@@ -49,6 +49,8 @@ last = ""
 lastAudio = []
 # the word `last`/`lastAudio` refer to, when the lookup was a word definition
 lastWord = ""
+# whether `last` refers to a word definition lookup (as opposed to an IP, ISBN, or URL lookup)
+lastIsWordDefinition = False
 IPV4 = re.compile(
 	r"^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
 )
@@ -152,7 +154,7 @@ def get(addr, timeout=10):
 
 
 def get_ip_info(ip):
-	global last, lastAudio
+	global last, lastAudio, lastIsWordDefinition
 	response = get(
 		"http://ip-api.com/json/"
 		+ ip
@@ -173,6 +175,7 @@ def get_ip_info(ip):
 	else:
 		tones.beep(300, 200)
 		lastAudio = []
+		lastIsWordDefinition = False
 		last = (
 			_("country")
 			+ ": "
@@ -214,7 +217,7 @@ def get_ip_info(ip):
 
 
 def get_book_info(isbn):
-	global last, lastAudio
+	global last, lastAudio, lastIsWordDefinition
 	isbn = isbn.replace(" ", "")
 	isbn = isbn.replace("-", "")
 	response = get("https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn)
@@ -228,6 +231,7 @@ def get_book_info(isbn):
 	else:
 		tones.beep(300, 200)
 		lastAudio = []
+		lastIsWordDefinition = False
 		info = response["items"][0]["volumeInfo"]
 		last = (
 			_("title")
@@ -258,7 +262,7 @@ def get_book_info(isbn):
 
 
 def get_word_info(word):
-	global last, lastAudio, lastWord
+	global last, lastAudio, lastWord, lastIsWordDefinition
 	entry = definitions.fetch_word_entry(word)
 	if entry is None:
 		return
@@ -275,6 +279,7 @@ def get_word_info(word):
 	tones.beep(300, 200)
 	lastAudio = definitions.get_entry_audio(entry)
 	lastWord = word
+	lastIsWordDefinition = True
 	last = ". ".join(fields)
 	ui.message(last)
 
@@ -282,7 +287,7 @@ def get_word_info(word):
 def get_url_info(addr, timeout=10):
 	# We violate DRY and implement parts of `get()` here, because we have to retrieve the headers and set a common user agent
 	# Ugly, but passable under the circumstances
-	global last, lastAudio
+	global last, lastAudio, lastIsWordDefinition
 	error = _("error")
 	if not addr.startswith(("http://", "https://")):
 		addr = "https://" + addr
@@ -340,6 +345,7 @@ def get_url_info(addr, timeout=10):
 		fields.append(_("redirects to") + ": " + final_domain)
 	tones.beep(300, 200)
 	lastAudio = []
+	lastIsWordDefinition = False
 	last = ". ".join(fields)
 	ui.message(last)
 
@@ -407,7 +413,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 			if r == 0:
 				ui.message(last)
 			elif r == 1:
-				if lastAudio:
+				if lastIsWordDefinition:
 					# translators: title of the dialog showing a word's definition and pronunciation audio buttons
 					title = _("Definition for {0}").format(lastWord)
 					definitions.show_audio_browseable_message("\n".join(last.split(". ")), title, lastAudio)
